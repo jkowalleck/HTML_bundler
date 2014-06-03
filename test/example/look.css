@@ -1,0 +1,8 @@
+/* remember for development: lines that include the string "@striponbuild" will be stripped on build ;-) */
+
+.extern {
+	display: block;
+	padding: 1ex 1em;
+	color: red;
+	border: 1px solid red; /* @striponbuild */
+}
