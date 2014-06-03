@@ -22,7 +22,7 @@ pip install -i requirements.txt
 ## use
 
 ```sh
-<path_to_here>/build.py <path_to_somewere>/myfile.html
+<path_to_here>/bundler.py <path_to_somewere>/myfile.html
 ```
 
 
