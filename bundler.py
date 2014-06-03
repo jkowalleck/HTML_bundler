@@ -13,7 +13,8 @@ def build(path_to_file):
 
     ###### config #######
 
-    tag_stripOnBuild = '@striponbuild'
+    tag_stripOnBuild = 'striponbuild'
+    inline_stripOnBuild = '@striponbuild'
 
     yuic = "yuicompressor-2.4.8.jar"
 
@@ -29,7 +30,7 @@ def build(path_to_file):
         return re.sub(r"~pe\{([a-zA-Z0-9#]+?)\}~", r"&\1;", string)
 
     def strip_on_build(string):
-        string = re.sub(r".*@striponbuild.*", "", string, flags=re.IGNORECASE)
+        string = re.sub(re.compile(".*"+inline_stripOnBuild+".*", flags=re.IGNORECASE), "", string)
         return string
 
     def yui_compress(kind, string, encoding="utf-8"):

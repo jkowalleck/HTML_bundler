@@ -30,6 +30,7 @@
 	</head>
 	<body>
 
+		<!--  remember: striponbuild-tags will be removed on build ;-)  -->
 
 		<div> test HTML special chars:
 			ä &auml;
@@ -40,14 +41,14 @@
 
 		<div class="extern">
 			this should be formatted red via extern CSS<br />
-			there will be a red border, before building
+			<striponbuild>there will be a red border</striponbuild>
 		</div>
 
 		<br />
 
 		<div class="inline">
 			this should be formatted blue via inline CSS<br />
-			there will be a blue border, before building
+			<striponbuild>there will be a blue border</striponbuild>
 		</div>
 
 		<!-- -comments will be stripped on build -->
