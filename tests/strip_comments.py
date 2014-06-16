@@ -6,9 +6,6 @@ import unittest
 
 from bundler import Bundler
 
-# TODO ge the import done *grml*
-
-
 class Test(unittest.TestCase):
     code = " some code "
 

@@ -15,7 +15,16 @@ import bs4
 import html5lib   # used by BeautifulSoup
 
 
-class Bundler:
+class Bundler(object):
+
+    ### constants ###
+
+    YUIC_TYPE_JS = "js"
+    YUIC_TYPE_CSS = "css"
+
+    FLAG_STRIP_COMMENTS = 1
+    FLAG_STRIP_ON_BUILD = 2
+    FLAG_COMPRESS = 4
 
     ### static methods ###
 
@@ -38,14 +47,16 @@ class Bundler:
         return bs4doc
 
     @staticmethod
-    def strip_tag_from_bs4(bs4doc, tagname):
-        for node in bs4doc.find_all(tagname):
-            node.extract()
+    def strip_tag_from_bs4(bs4doc, tagnames):
+        for tagname in tagnames:
+            for node in bs4doc.find_all(tagname):
+                node.extract()
         return bs4doc
 
     @staticmethod
-    def strip_marked_line_from_css_or_js(string_css_or_js, marker):
-        marker_re = re.compile("^.*" + marker + ".*$", flags=re.IGNORECASE)
+    def strip_marked_line_from_css_or_js(string_css_or_js, markers):
+        markers = [re.escape(marker) for marker in markers]
+        marker_re = re.compile("^.*(" + "|".join(markers) + ").*$", flags=re.IGNORECASE)
         string_css_or_js = re.sub(marker_re, "", string_css_or_js, flags=re.MULTILINE)
         return string_css_or_js
 
@@ -56,29 +67,42 @@ class Bundler:
     @staticmethod
     def __preserve_html_entities(string):
         # FIXME preserve suspicious
-        string = re.sub(r"&([a-zA-Z0-9#]+?);", r"~pe{\1}~", string)
+        string = re.sub(r"&([a-zA-Z0-9#]+?);", r"~pe{\1}~", str(string))
         return string
 
     @staticmethod
     def __revert_html_entities(string):
         # FIXME TODO revert reserved suspicious
-        string = re.sub(r"~pe\{([a-zA-Z0-9#]+?)\}~", r"&\1;", string)
+        string = re.sub(r"~pe\{([a-zA-Z0-9#]+?)\}~", r"&\1;", str(string))
         return string
 
     @staticmethod
-    def compress_html(string, maxlen):
+    def compress_html(string, len):
+        """
+            minlen == 0 : everything in a new line
+            minlen < 0 : all in one line
+        """
+
+        string = str(string)
+
         re_whitespace = re.compile("[ \t\n\r]+")
 
         string_part_clean = ""
         string_parts_clean = []
 
-        for string_part_raw in string:
+        for string_part_raw in string.split("\n"):
             string_part_raw = re.sub(re_whitespace, " ", string_part_raw).strip()
-            if len(string_part_clean) + len(string_part_raw) > maxlen:
-                string_parts_clean.append(string_part_clean)
-                string_part_clean = string_part_raw
-            else:
+            if not string_part_raw:
+                continue
+            if len < 0 or len(string_part_clean) + len(string_part_raw) <= len:
+                if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
+                    string_part_raw = " " + string_part_raw
                 string_part_clean += string_part_raw
+            else:
+                if string_part_clean:
+                    string_parts_clean.append(string_part_clean)
+                string_part_clean = string_part_raw
+
         string_parts_clean.append(string_part_clean)
 
         return "\n".join(str(part) for part in string_parts_clean)
@@ -100,7 +124,7 @@ class Bundler:
         return cls(string, path, flags)
 
     @classmethod
-    def yui_compress(cls, kind, string, encoding="utf-8"):
+    def yui_compress(cls, kind, string, encoding="utf-8", flags=0):
         # TODO use flags
         process = subprocess.Popen(
             ["java",
@@ -130,97 +154,121 @@ class Bundler:
         return string_js
 
     @classmethod
+    def get_base_absolute(cls, bs4doc, path_file, path_base=""):
+        path = path_file
+        """
+        not implemented, since i don't use it, yet
+
+        idea :
+         $base = bs4doc.find('head').find('base')['href']
+         if cls.src_is_external($base): return FALSE
+
+         $base = os.path.join(path, $base) # breaks on /
+
+         if not isdir($base): return FALSE
+
+         return $base
+        """
+        # FIXME build a function body that works
+        return path
+
+    @classmethod
     def fetch_external_js(cls, bs4doc, path):
-        for script in bs4doc.find_all('script', {'src': True}):
-            src = script['src']
-            if cls.src_is_external(src):
-                continue
+        path = cls.get_base_absolute(bs4doc, path)
+        if path:
+            for script in bs4doc.find_all('script', {'src': True}):
+                src = script['src']
+                if cls.src_is_external(src):
+                    continue
 
-            src_path = os.path.join(path, src)
-            if not os.path.isfile(src_path):
-                # script.extract()
-                continue
+                src_path = os.path.join(path, src)
+                if not os.path.isfile(src_path):
+                    # script.extract()
+                    continue
 
-            del script['src']
-            fh = open(src_path, "r")
-            script.string = fh.read()
-            fh.close()
-            del fh
+                del script['src']
+                fh = open(src_path, "r")
+                script.string = fh.read()
+                fh.close()
+                del fh
 
         return bs4doc
 
     @classmethod
     def fetch_external_css(cls, bs4doc, path):
-        for link in bs4doc.find_all('link', {'rel': 'stylesheet', 'href': True}):
-            src = link['href']
-            if cls.src_is_external(src):
-                continue
+        path = cls.get_base_absolute(bs4doc, path)
+        if path:
+            for link in bs4doc.find_all('link', {'rel': 'stylesheet', 'href': True}):
+                src = link['href']
+                if cls.src_is_external(src):
+                    continue
 
-            src_path = os.path.join(path, src)
-            if not os.path.isfile(src_path):
-                # link.extract()
-                continue
+                src_path = os.path.join(path, src)
+                if not os.path.isfile(src_path):
+                    # link.extract()
+                    continue
 
-            fh = open(src_path, "r")
-            style_content = fh.read()
-            fh.close()
-            del fh
+                fh = open(src_path, "r")
+                style_content = fh.read()
+                fh.close()
+                del fh
 
-            style_inline = bs4doc.new_tag("style", type="text/css")
-            style_inline.string = style_content
-            link.replace_with(style_inline)
+                style_inline = bs4doc.new_tag("style", type="text/css")
+                style_inline.string = style_content
+                link.replace_with(style_inline)
 
         return bs4doc
 
-    ### constants ###
-
-    YUIC_TYPE_JS = "js"
-    YUIC_TYPE_CSS = "css"
-
-    FLAG_STRIP_COMMENTS = 1
-    FLAG_STRIP_ON_BUILD = 2
-    FLAG_COMPRESS = 4
-
     ### config ###
 
-    __tag_stripOnBundle = 'striponbundle'
-    __inline_stripOnBundle = "@striponbundle"
-
-    __yuic = "yuicompressor-2.4.8.jar"
+    __yuic = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "bin", "yuicompressor-2.4.8.jar")
 
     ### instance variables ###
 
-    _string = ""
-    _path = ""
-    _maxlen = 0
-    _flags = 0
+    stripOnBundle_tags = ['striponbundle']
+    stripOnBundle_inline_js = ["@striponbundle"]
+    stripOnBundle_inline_css = ["@striponbundle"]
+
+    string = ""
+    path = ""
+    htroot = ""
+    compress_len = 0
+    flags = 0
 
     ### instance methods ###
+    def __init__(self, string, path="", htroot="", flags=0, compress_len=120, encoding="utf-8"):
+        self.string = string.encode(encoding)
+        self.path = path
+        self.htroot = htroot
+        self.flags = flags
+        self.compress_len = compress_len
 
-    def __init__(self, string, path=False, flags=0, maxlen=120):
-        self._string = string
-        self._path = path
-        self._flags = flags
-        self._maxlen = maxlen
-
-    def __str__(self):
-        string = self._string
+    def bundle(self):
+        string = self.string
         string = self.__preserve_html_entities(string)
 
         bs4doc = bs4.BeautifulSoup(string)
         del string
 
-        self.strip_tag_from_bs4(bs4doc, self.__tag_stripOnBundle)
+        self.strip_tag_from_bs4(bs4doc, self.stripOnBundle_tags)
 
-        self.fetch_external_js(bs4doc, self._path)
+        self.fetch_external_js(bs4doc, self.path)
         for script in bs4doc.find_all('script', {'src': False}):
-            # TODO yuic
-            script.string = self.strip_comments_from_js(script.string)
+            script_string = script.string
+            script_string = self.strip_marked_line_from_css_or_js(script_string, self.stripOnBundle_inline_js)
+            script_string = self.strip_comments_from_js(script_string)
+            script_string = self.yui_compress(self.YUIC_TYPE_JS, script_string, flags=self.flags)
+            script.string = script_string
+            del script_string
 
-        self.fetch_external_css(bs4doc, self._path)
+        self.fetch_external_css(bs4doc, self.path)
         for style in bs4doc.find_all('style'):
-            # TODO yuic
-            style.string = self.strip_comments_from_css(style.string)
+            style_string = style.string
+            style_string = self.strip_marked_line_from_css_or_js(style_string, self.stripOnBundle_inline_css)
+            style_string = self.strip_comments_from_css(style_string)
+            style_string = self.yui_compress(self.YUIC_TYPE_CSS, style_string, flags=self.flags)
+            style.string = style_string
+            del style_string
 
         self.strip_comments_from_bs4(bs4doc)
 
@@ -229,6 +277,9 @@ class Bundler:
 
         string = self.__revert_html_entities(string)
 
-        string = self.compress_html(string, self._maxlen)
+        string = self.compress_html(string, self.compress_len)
 
         return string
+
+    def __str__(self):
+        return self.bundle()
