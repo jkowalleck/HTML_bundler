@@ -6,6 +6,7 @@ import unittest
 
 from bundler import Bundler
 
+
 class Test(unittest.TestCase):
     code = " some code "
 

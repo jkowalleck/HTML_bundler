@@ -22,9 +22,16 @@ class Bundler(object):
     YUIC_TYPE_JS = "js"
     YUIC_TYPE_CSS = "css"
 
-    FLAG_STRIP_COMMENTS = 1
-    FLAG_STRIP_ON_BUILD = 2
-    FLAG_COMPRESS = 4
+    FLAG_STRIP_COMMENTS_HTML = 1
+    FLAG_STRIP_COMMENTS_JS = 2
+    FLAG_STRIP_COMMENTS_CSS = 4
+    FLAG_STRIP_COMMENTS = FLAG_STRIP_COMMENTS_HTML | FLAG_STRIP_COMMENTS_JS | FLAG_STRIP_COMMENTS_CSS
+
+    FLAG_OPTIMIZE_JS = 8
+    FLAG_OPTIMIZE_CSS = 16
+    FLAG_OPTIMIZE = FLAG_OPTIMIZE_CSS | FLAG_OPTIMIZE_JS
+
+    FLAG_COMPRESS = 32
 
     ### static methods ###
 
@@ -48,16 +55,19 @@ class Bundler(object):
 
     @staticmethod
     def strip_tag_from_bs4(bs4doc, tagnames):
-        for tagname in tagnames:
-            for node in bs4doc.find_all(tagname):
-                node.extract()
+        for tagname in [tagname.strip() for tagname in tagnames]:
+            if len(tagname) > 0:
+                for node in bs4doc.find_all(tagname):
+                    node.extract()
         return bs4doc
 
     @staticmethod
     def strip_marked_line_from_css_or_js(string_css_or_js, markers):
-        markers = [re.escape(marker) for marker in markers]
-        marker_re = re.compile("^.*(" + "|".join(markers) + ").*$", flags=re.IGNORECASE)
-        string_css_or_js = re.sub(marker_re, "", string_css_or_js, flags=re.MULTILINE)
+        for marker in markers:
+            marker = marker.strip()
+            if len(markers) > 0:
+                marker_re = re.compile("^(?:.*\s)?" + re.escape(marker) + "(?:\s.*)?$", flags=re.IGNORECASE)
+                string_css_or_js = re.sub(marker_re, "", string_css_or_js, flags=re.MULTILINE)
         return string_css_or_js
 
     @staticmethod
@@ -225,9 +235,9 @@ class Bundler(object):
 
     ### instance variables ###
 
-    stripOnBundle_tags = ['striponbundle']
-    stripOnBundle_inline_js = ["@striponbundle"]
-    stripOnBundle_inline_css = ["@striponbundle"]
+    strip_tags = []
+    strip_inline_js = []
+    strip_inline_css = []
 
     string = ""
     path = ""
@@ -236,12 +246,24 @@ class Bundler(object):
     flags = 0
 
     ### instance methods ###
-    def __init__(self, string, path="", htroot="", flags=0, compress_len=120, encoding="utf-8"):
+    def __init__(self, string, path="", htroot="",
+                 flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
+                 compress_len=120, encoding="utf-8",
+                 strip_tags='stripOnBundle',
+                 strip_inline_js="@stripOnBundle",
+                 strip_inline_css="@stripOnBundle"):
+
+        #if hasattr(string, 'read'):
+        #    string = string.read()
+
         self.string = string.encode(encoding)
         self.path = path
         self.htroot = htroot
         self.flags = flags
         self.compress_len = compress_len
+        self.strip_tags = strip_tags.split(",")
+        self.strip_inline_js = strip_inline_js.split(",")
+        self.strip_inline_css = strip_inline_css.split(",")
 
     def bundle(self):
         string = self.string
@@ -250,34 +272,43 @@ class Bundler(object):
         bs4doc = bs4.BeautifulSoup(string)
         del string
 
-        self.strip_tag_from_bs4(bs4doc, self.stripOnBundle_tags)
+        if self.strip_tags:
+            self.strip_tag_from_bs4(bs4doc, self.strip_tags)
 
         self.fetch_external_js(bs4doc, self.path)
         for script in bs4doc.find_all('script', {'src': False}):
             script_string = script.string
-            script_string = self.strip_marked_line_from_css_or_js(script_string, self.stripOnBundle_inline_js)
-            script_string = self.strip_comments_from_js(script_string)
-            script_string = self.yui_compress(self.YUIC_TYPE_JS, script_string, flags=self.flags)
+            if self.strip_inline_js:
+                script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
+            if self.flags & self.FLAG_STRIP_COMMENTS_JS == self.FLAG_STRIP_COMMENTS_JS:
+                script_string = self.strip_comments_from_js(script_string)
+            if self.flags & self.FLAG_OPTIMIZE_JS == self.FLAG_OPTIMIZE_JS:
+                script_string = self.yui_compress(self.YUIC_TYPE_JS, script_string, flags=self.flags)
             script.string = script_string
             del script_string
 
         self.fetch_external_css(bs4doc, self.path)
         for style in bs4doc.find_all('style'):
             style_string = style.string
-            style_string = self.strip_marked_line_from_css_or_js(style_string, self.stripOnBundle_inline_css)
-            style_string = self.strip_comments_from_css(style_string)
-            style_string = self.yui_compress(self.YUIC_TYPE_CSS, style_string, flags=self.flags)
+            if self.strip_inline_css:
+                style_string = self.strip_marked_line_from_css_or_js(style_string, self.strip_inline_css)
+            if self.flags & self.FLAG_STRIP_COMMENTS_CSS == self.FLAG_STRIP_COMMENTS_CSS:
+                style_string = self.strip_comments_from_css(style_string)
+            if self.flags & self.FLAG_OPTIMIZE_CSS == self.FLAG_OPTIMIZE_CSS:
+                style_string = self.yui_compress(self.YUIC_TYPE_CSS, style_string, flags=self.flags)
             style.string = style_string
             del style_string
 
-        self.strip_comments_from_bs4(bs4doc)
+        if self.flags & self.FLAG_STRIP_COMMENTS_HTML == self.FLAG_STRIP_COMMENTS_HTML:
+            self.strip_comments_from_bs4(bs4doc)
 
-        string = bs4doc.prettify()  # alternative: str(bs4doc)
+        string = bs4doc.prettify()
         del bs4doc
 
         string = self.__revert_html_entities(string)
 
-        string = self.compress_html(string, self.compress_len)
+        if self.flags & self.FLAG_COMPRESS == self.FLAG_COMPRESS:
+            string = self.compress_html(string, self.compress_len)
 
         return string
 
