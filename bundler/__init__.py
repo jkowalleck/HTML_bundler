@@ -6,6 +6,7 @@ __license__ = "MIT"
 __all__ = ['Bundler']
 
 
+### some imports ####
 import sys
 import os
 import re
@@ -14,6 +15,10 @@ import subprocess
 import bs4
 import html5lib   # used by BeautifulSoup
 
+import lib.jsstrip.python.jsstrip as jsstrip
+#import strip as js_css_strip_comments
+
+### the builder -here we go ###
 
 class Bundler(object):
 
@@ -36,16 +41,11 @@ class Bundler(object):
     ### static methods ###
 
     @staticmethod
-    def _strip_comments_block(string_css_or_js):
-        while True:
-            string_css_or_js, replaced = re.subn(r"/\*.*?\*/", "", string_css_or_js, flags=re.DOTALL)  # strip block
-            if replaced < 1:
-                return string_css_or_js
-
-    @staticmethod
-    def _strip_comments_inline(string_js):
-        string_js = re.sub(r"//.*$", "", string_js, flags=re.MULTILINE)  # strip end line
-        return string_js
+    def _strip_comments_from_js_or_css(string, optSaveFirst=False, optWhite=False, optSingle=True, optMulti=True):
+        string = jsstrip.strip(string,
+                               optSaveFirst=optSaveFirst, optWhite=optWhite, optSingle=optSingle, optMulti=optMulti)
+        string = "\n".join([line for line in string.split("\n") if len(line.strip()) > 0])
+        return string
 
     @staticmethod
     def strip_comments_from_bs4(bs4doc):
@@ -117,7 +117,7 @@ class Bundler(object):
 
         return "\n".join(str(part) for part in string_parts_clean)
 
-    ### class methods ###
+    ### factory methods ###
 
     @classmethod
     def from_file(cls, file, flags):
@@ -132,6 +132,21 @@ class Bundler(object):
         del fh
 
         return cls(string, path, flags)
+
+    ### class methods ###
+
+    @classmethod
+    def strip_comments_from_js(cls, string, optSaveFirst=False):
+        string = cls._strip_comments_from_js_or_css(string, optSaveFirst=optSaveFirst,
+                                                    optWhite=False, optSingle=True, optMulti=True)
+        return string
+
+    @classmethod
+    def strip_comments_from_css(cls, string, optSaveFirst=False):
+        string = cls._strip_comments_from_js_or_css(string, optSaveFirst=optSaveFirst,
+                                                    optWhite=False, optSingle=False, optMulti=True)
+
+        return string
 
     @classmethod
     def yui_compress(cls, kind, string, encoding="utf-8", flags=0):
@@ -151,17 +166,6 @@ class Bundler(object):
 
         success = stderr == b""
         return success, (stdout if success else stderr).decode(sys.stdout.encoding)
-
-    @classmethod
-    def strip_comments_from_css(cls, string_css):
-        string_css = cls._strip_comments_block(string_css)
-        return string_css
-
-    @classmethod
-    def strip_comments_from_js(cls, string_js):
-        string_js = cls._strip_comments_block(string_js)
-        string_js = cls._strip_comments_inline(string_js)
-        return string_js
 
     @classmethod
     def get_base_absolute(cls, bs4doc, path_file, path_base=""):
@@ -246,6 +250,7 @@ class Bundler(object):
     flags = 0
 
     ### instance methods ###
+
     def __init__(self, string, path="", htroot="",
                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
                  compress_len=120, encoding="utf-8",
@@ -314,3 +319,4 @@ class Bundler(object):
 
     def __str__(self):
         return self.bundle()
+
