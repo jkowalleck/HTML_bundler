@@ -35,16 +35,22 @@ class Test(unittest.TestCase):
     def test_suspicious_complex(self):
         string = self.code + '"suspect ' + self.comment_block + '";' +\
             self.code + "'suspect " + self.comment_endline + "';" +\
-            self.code + self.comment_block + self.code + self.comment_endline
+            self.code + self.comment_block + self.comment_endline
+
         string_stripped = self.code + '"suspect ' + self.comment_block + '";' +\
             self.code + "'suspect " + self.comment_endline + "';" +\
-            self.code + self.code
-        self.assertEqual(Bundler.strip_comments_from_css(string), string_stripped)
+            self.code
         self.assertEqual(Bundler.strip_comments_from_js(string), string_stripped)
+
+        string_stripped = self.code + '"suspect ' + self.comment_block + '";' +\
+            self.code + "'suspect " + self.comment_endline + "';" +\
+            self.code + self.comment_endline
+        self.assertEqual(Bundler.strip_comments_from_css(string), string_stripped)
 
     def test_endline_only(self):
         string = self.comment_endline
         string_stripped = ""
+        self.assertEqual(Bundler.strip_comments_from_css(string), string)
         self.assertEqual(Bundler.strip_comments_from_js(string), string_stripped)
 
     def test_block_only(self):
@@ -56,6 +62,7 @@ class Test(unittest.TestCase):
     def test_endline_ending(self):
         string = self.code + self.comment_endline
         string_stripped = self.code
+        self.assertEqual(Bundler.strip_comments_from_css(string), string)
         self.assertEqual(Bundler.strip_comments_from_js(string), string_stripped)
 
     def test_block_ending(self):
@@ -91,8 +98,10 @@ class Test(unittest.TestCase):
     def test_complex (self):
         string = self.code + self.comment_block_multiline + self.code + self.comment_endline + "\n" + \
             self.code + self.comment_block + self.code
+
         string_stripped = self.code + self.code + "\n" + self.code + self.code
         self.assertEqual(Bundler.strip_comments_from_js(string), string_stripped)
+
         string_stripped = self.code + self.code + self.comment_endline + "\n" + self.code + self.code
         self.assertEqual(Bundler.strip_comments_from_css(string), string_stripped)
 
