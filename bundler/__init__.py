@@ -16,9 +16,10 @@ import bs4
 import html5lib   # used by BeautifulSoup
 
 import lib.jsstrip.python.jsstrip as jsstrip
-#import strip as js_css_strip_comments
+
 
 ### the builder -here we go ###
+
 
 class Bundler(object):
 
@@ -28,15 +29,19 @@ class Bundler(object):
     YUIC_TYPE_CSS = "css"
 
     FLAG_STRIP_COMMENTS_HTML = 1
-    FLAG_STRIP_COMMENTS_JS = 2
-    FLAG_STRIP_COMMENTS_CSS = 4
+    FLAG_STRIP_COMMENTS_JS_BLOCK = 2
+    FLAG_STRIP_COMMENTS_JS_ENDLINE = 4
+    FLAG_STRIP_COMMENTS_JS = FLAG_STRIP_COMMENTS_JS_BLOCK | FLAG_STRIP_COMMENTS_JS_ENDLINE
+    FLAG_STRIP_COMMENTS_JS_KEEP_FIRST = 8
+    FLAG_STRIP_COMMENTS_CSS = 16
+    FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST = 32
     FLAG_STRIP_COMMENTS = FLAG_STRIP_COMMENTS_HTML | FLAG_STRIP_COMMENTS_JS | FLAG_STRIP_COMMENTS_CSS
 
-    FLAG_OPTIMIZE_JS = 8
-    FLAG_OPTIMIZE_CSS = 16
+    FLAG_OPTIMIZE_JS = 64
+    FLAG_OPTIMIZE_CSS = 128
     FLAG_OPTIMIZE = FLAG_OPTIMIZE_CSS | FLAG_OPTIMIZE_JS
 
-    FLAG_COMPRESS = 32
+    FLAG_COMPRESS = 256
 
     ### static methods ###
 
@@ -44,7 +49,7 @@ class Bundler(object):
     def _strip_comments_from_js_or_css(string, optSaveFirst=False, optWhite=False, optSingle=True, optMulti=True):
         string = jsstrip.strip(string,
                                optSaveFirst=optSaveFirst, optWhite=optWhite, optSingle=optSingle, optMulti=optMulti)
-        string = "\n".join([line for line in string.split("\n") if len(line.strip()) > 0])
+        string = "\n".join([line for line in string.split("\n") if len(line.strip()) > 0])  # strip empty lines
         return string
 
     @staticmethod
@@ -87,7 +92,7 @@ class Bundler(object):
         return string
 
     @staticmethod
-    def compress_html(string, len):
+    def compress_html(string, length):
         """
             minlen == 0 : everything in a new line
             minlen < 0 : all in one line
@@ -104,7 +109,7 @@ class Bundler(object):
             string_part_raw = re.sub(re_whitespace, " ", string_part_raw).strip()
             if not string_part_raw:
                 continue
-            if len < 0 or len(string_part_clean) + len(string_part_raw) <= len:
+            if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
                 if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
                     string_part_raw = " " + string_part_raw
                 string_part_clean += string_part_raw
@@ -136,20 +141,28 @@ class Bundler(object):
     ### class methods ###
 
     @classmethod
-    def strip_comments_from_js(cls, string, optSaveFirst=False):
-        string = cls._strip_comments_from_js_or_css(string, optSaveFirst=optSaveFirst,
-                                                    optWhite=False, optSingle=True, optMulti=True)
+    def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):
+        optSaveFirst = (flags & cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST != 0)
+        optMulti = (flags & cls.FLAG_STRIP_COMMENTS_JS_BLOCK != 0)
+        optSingle = (flags & cls.FLAG_STRIP_COMMENTS_JS_ENDLINE != 0)
+        if optMulti or optSingle:
+            string = cls._strip_comments_from_js_or_css(string, optWhite=False,
+                                                        optSaveFirst=optSaveFirst,
+                                                        optSingle=optSingle, optMulti=optMulti)
         return string
 
     @classmethod
-    def strip_comments_from_css(cls, string, optSaveFirst=False):
-        string = cls._strip_comments_from_js_or_css(string, optSaveFirst=optSaveFirst,
-                                                    optWhite=False, optSingle=False, optMulti=True)
-
+    def strip_comments_from_css(cls, string, flags=FLAG_STRIP_COMMENTS_CSS):
+        optSaveFirst = (flags & cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST != 0)
+        optMulti = (flags & cls.FLAG_STRIP_COMMENTS_CSS != 0)
+        if optMulti:
+            string = cls._strip_comments_from_js_or_css(string, optWhite=False, optSingle=False,
+                                                        optSaveFirst=optSaveFirst,
+                                                        optMulti=optMulti)
         return string
 
     @classmethod
-    def yui_compress(cls, kind, string, encoding="utf-8", flags=0):
+    def yui_compress(cls, kind, string, flags=0):
         # TODO use flags
         process = subprocess.Popen(
             ["java",
@@ -285,9 +298,8 @@ class Bundler(object):
             script_string = script.string
             if self.strip_inline_js:
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
-            if self.flags & self.FLAG_STRIP_COMMENTS_JS == self.FLAG_STRIP_COMMENTS_JS:
-                script_string = self.strip_comments_from_js(script_string)
-            if self.flags & self.FLAG_OPTIMIZE_JS == self.FLAG_OPTIMIZE_JS:
+            script_string = self.strip_comments_from_js(script_string, flags=self.flags)
+            if self.flags & self.FLAG_OPTIMIZE_JS != 0:
                 script_string = self.yui_compress(self.YUIC_TYPE_JS, script_string, flags=self.flags)
             script.string = script_string
             del script_string
@@ -297,9 +309,8 @@ class Bundler(object):
             style_string = style.string
             if self.strip_inline_css:
                 style_string = self.strip_marked_line_from_css_or_js(style_string, self.strip_inline_css)
-            if self.flags & self.FLAG_STRIP_COMMENTS_CSS == self.FLAG_STRIP_COMMENTS_CSS:
-                style_string = self.strip_comments_from_css(style_string)
-            if self.flags & self.FLAG_OPTIMIZE_CSS == self.FLAG_OPTIMIZE_CSS:
+            style_string = self.strip_comments_from_css(style_string, flags=self.flags)
+            if self.flags & self.FLAG_OPTIMIZE_CSS != 0:
                 style_string = self.yui_compress(self.YUIC_TYPE_CSS, style_string, flags=self.flags)
             style.string = style_string
             del style_string

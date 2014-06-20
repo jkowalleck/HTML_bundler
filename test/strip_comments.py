@@ -95,7 +95,7 @@ class Test(unittest.TestCase):
         self.assertEqual(Bundler.strip_comments_from_css(string), string_stripped)
         self.assertEqual(Bundler.strip_comments_from_js(string), string_stripped)
 
-    def test_complex (self):
+    def test_complex(self):
         string = self.code + self.comment_block_multiline + self.code + self.comment_endline + "\n" + \
             self.code + self.comment_block + self.code
 
