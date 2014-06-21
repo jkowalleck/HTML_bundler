@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" unit test for Bundler.strip_comments_from_... """
+""" unit test for Bundler.compress_html """
 
 import unittest
 

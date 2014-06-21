@@ -10,7 +10,9 @@ __all__ = ['Bundler']
 import sys
 import os
 import re
+import chardet
 import subprocess
+
 
 import bs4
 import html5lib   # used by BeautifulSoup
@@ -77,18 +79,20 @@ class Bundler(object):
 
     @staticmethod
     def src_is_external(uri):
-        return uri.find("(.*:)?//") > -1
+        # read http://en.wikipedia.org/wiki/URI_scheme
+        match = re.match(r"^(?:[a-z][a-z0-9\+\.\-]+?:)?//", uri, flags=re.IGNORECASE)
+        return match
 
     @staticmethod
-    def __preserve_html_entities(string):
-        # FIXME preserve suspicious
-        string = re.sub(r"&([a-zA-Z0-9#]+?);", r"~pe{\1}~", str(string))
+    def _preserve_html_entities(string):
+        string = re.sub(r"~pe\{(.+?)\}~", r"~pe{!\1}~", string)
+        string = re.sub(r"&(#?\d+?|[xX][a-fA-F\d]+?|[a-zA-Z\d]+?);", r"~pe{\1}~", string)
         return string
 
     @staticmethod
-    def __revert_html_entities(string):
-        # FIXME TODO revert reserved suspicious
-        string = re.sub(r"~pe\{([a-zA-Z0-9#]+?)\}~", r"&\1;", str(string))
+    def _revert_html_entities(string):
+        string = re.sub(r"~pe\{(#?\d+?|[xX][a-fA-F\d]+?|[a-zA-Z\d]+?)\}~", r"&\1;", string)
+        string = re.sub(r"~pe\{!(.+?)\}~", r"~pe{\1}~", string)
         return string
 
     @staticmethod
@@ -110,7 +114,8 @@ class Bundler(object):
             if not string_part_raw:
                 continue
             if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
-                if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
+                if string_part_clean and string_part_raw \
+                        and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
                     string_part_raw = " " + string_part_raw
                 string_part_clean += string_part_raw
             else:
@@ -169,7 +174,7 @@ class Bundler(object):
                 "-jar", cls.__yuic,
                 "--line-break", "0",
                 "--type", kind,
-                "--charset", encoding
+                "--charset", chardet.detect(string)['encoding']
             ],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             cwd=os.path.dirname(os.path.realpath(__file__)))
@@ -285,7 +290,7 @@ class Bundler(object):
 
     def bundle(self):
         string = self.string
-        string = self.__preserve_html_entities(string)
+        string = self._preserve_html_entities(string)
 
         bs4doc = bs4.BeautifulSoup(string)
         del string
@@ -321,7 +326,7 @@ class Bundler(object):
         string = bs4doc.prettify()
         del bs4doc
 
-        string = self.__revert_html_entities(string)
+        string = self._revert_html_entities(string)
 
         if self.flags & self.FLAG_COMPRESS == self.FLAG_COMPRESS:
             string = self.compress_html(string, self.compress_len)
