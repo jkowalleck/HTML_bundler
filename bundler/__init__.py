@@ -86,12 +86,12 @@ class Bundler(object):
     @staticmethod
     def _preserve_html_entities(string):
         string = re.sub(r"~pe\{(.+?)\}~", r"~pe{!\1}~", string)
-        string = re.sub(r"&(#?\d+?|[xX][a-fA-F\d]+?|[a-zA-Z\d]+?);", r"~pe{\1}~", string)
+        string = re.sub(r"&(#[:digit:]+?|#x[:xdigit:]+?|[:alnum:]+?);", r"~pe{\1}~", string)
         return string
 
     @staticmethod
     def _revert_html_entities(string):
-        string = re.sub(r"~pe\{(#?\d+?|[xX][a-fA-F\d]+?|[a-zA-Z\d]+?)\}~", r"&\1;", string)
+        string = re.sub(r"~pe\{(#[:digit:]+?|#x[:xdigit:]+?|[:alnum:]+?)\}~", r"&\1;", string)
         string = re.sub(r"~pe\{!(.+?)\}~", r"~pe{\1}~", string)
         return string
 
