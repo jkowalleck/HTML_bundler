@@ -33,11 +33,12 @@ class Bundler(object):
     FLAG_STRIP_COMMENTS_HTML = 1
     FLAG_STRIP_COMMENTS_JS_BLOCK = 2
     FLAG_STRIP_COMMENTS_JS_ENDLINE = 4
-    FLAG_STRIP_COMMENTS_JS = FLAG_STRIP_COMMENTS_JS_BLOCK | FLAG_STRIP_COMMENTS_JS_ENDLINE
     FLAG_STRIP_COMMENTS_JS_KEEP_FIRST = 8
     FLAG_STRIP_COMMENTS_CSS = 16
     FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST = 32
+    FLAG_STRIP_COMMENTS_JS = FLAG_STRIP_COMMENTS_JS_BLOCK | FLAG_STRIP_COMMENTS_JS_ENDLINE
     FLAG_STRIP_COMMENTS = FLAG_STRIP_COMMENTS_HTML | FLAG_STRIP_COMMENTS_JS | FLAG_STRIP_COMMENTS_CSS
+    FLAG_STRIP_COMMENTS_KEEP_FIRST = FLAG_STRIP_COMMENTS_JS_KEEP_FIRST | FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST
 
     FLAG_OPTIMIZE_JS = 64
     FLAG_OPTIMIZE_CSS = 128
@@ -253,7 +254,7 @@ class Bundler(object):
 
     ### config ###
 
-    __yuic = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "bin", "yuicompressor-2.4.8.jar")
+    __yuic = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "lib", "yuicompressor-2.4.8.jar")
 
     ### instance variables ###
 
