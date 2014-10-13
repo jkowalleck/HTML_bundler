@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
-import argparse
-import os
-
-from bundler import Bundler
-
 if __name__ == '__main__':
+
+    from bundler import Bundler
+
+    import os
+    import argparse
+    import chardet
+
 
     arg_parser = argparse.ArgumentParser(description="bundle a HTML file with multiple external (js|css) files " +
                                                      "to one big HTML file ")
 
     arg_parser.add_argument('-i', '--input-file', metavar='<file>', type=str,
-                            help='a file path - if not given, listen on stdin',
+                            help='a file path - if none given, listen on stdin',
                             dest="infile")
 
     arg_parser.add_argument('-p', '--path-dir', metavar='<dir>', type=str,
@@ -23,7 +25,7 @@ if __name__ == '__main__':
                             dest="htroot")
 
     arg_parser.add_argument('-o', '--output-file', metavar='<file>', type=str,
-                            help='a file path - if not given, output is sent to stdout',
+                            help='a file path - if none given, output is sent to stdout',
                             dest="outfile")
 
 
@@ -77,14 +79,16 @@ if __name__ == '__main__':
                             help='forces --optimize-js AND --optimize-css',
                             dest="flags", action="append_const", const=Bundler.FLAG_COMPRESS)
 
-
-
-    source = ""; path=""; htroot=""
-    flags=Bundler.FLAG_STRIP_COMMENTS | Bundler.FLAG_COMPRESS
-    compress_len=120; encoding="utf-8"
-    strip_tags='stripOnBundle'
-    strip_inline_js="@stripOnBundle"
-    strip_inline_css="@stripOnBundle"
+    #defaults and consts
+    source = ""
+    path = ""
+    htroot = ""
+    flags = Bundler.FLAG_STRIP_COMMENTS | Bundler.FLAG_COMPRESS
+    compress_len = 120
+    encoding = "utf-8"
+    strip_tags = 'stripOnBundle'
+    strip_inline_js = "@stripOnBundle"
+    strip_inline_css = "@stripOnBundle"
 
     args = arg_parser.parse_args()
 
@@ -103,7 +107,7 @@ if __name__ == '__main__':
     elif args.path:
         htroot = path
 
-    bundled = Bundler(source, path, htroot, flags, strip_tags, strip_inline_js, strip_inline_css).bundle()
+    bundled = Bundler(source, path, htroot, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css).bundle()
 
     if args.outfile:
         open(args.outfile, 'w').write(bundled)
@@ -111,7 +115,3 @@ if __name__ == '__main__':
         print(bundled)
 
 
-
-
-rep
-    echo arg_parser

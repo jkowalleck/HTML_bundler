@@ -1,15 +1,11 @@
-#!/usr/bin/env python
-
 """ unit test for Bundler.compress_html """
 
 import unittest
 
-import random
-
 from bundler import Bundler
 
 
-class Test(unittest.TestCase):
+class Test_compress_html(unittest.TestCase):
     string = """
         <html><head>
                 <title>some title</title>

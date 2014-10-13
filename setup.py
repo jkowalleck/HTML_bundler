@@ -14,7 +14,7 @@ config = {
     'install_requires': ['beautifulsoup4', 'html5lib'],
     'packages': ['Bundler'],
     'scripts': [],
-    'name': 'HTML_bundler'
+    'name': 'bundle'
 }
 
 setup(**config)

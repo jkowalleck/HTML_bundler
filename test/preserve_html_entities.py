@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """ test Bundler.__preserve_html_entities
      and Bundler.__revert_html_entities """
 
@@ -21,7 +19,7 @@ class Test_Bundler(Bundler):
 
 ### test
 
-class Test(unittest.TestCase):
+class Test_preserve_html_entries(unittest.TestCase):
 
     ### helper functions
 

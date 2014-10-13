@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """ test Bundler.src_is_external """
 
 import unittest
@@ -7,7 +5,7 @@ import unittest
 from bundler import Bundler
 
 
-class Test(unittest.TestCase):
+class Test_src_is_external(unittest.TestCase):
 
     def test_none(self):
         string = ""

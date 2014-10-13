@@ -13,11 +13,9 @@ import re
 import chardet
 import subprocess
 
-
 import bs4
-import html5lib   # used by BeautifulSoup
 
-import lib.jsstrip.python.jsstrip as jsstrip
+from lib import jsstrip
 
 
 ### the builder -here we go ###
@@ -65,7 +63,7 @@ class Bundler(object):
     def strip_tag_from_bs4(bs4doc, tagnames):
         for tagname in [tagname.strip() for tagname in tagnames]:
             if len(tagname) > 0:
-                for node in bs4doc.find_all(tagname):
+                for node in bs4doc.find_all(tagname, recursive=True):
                     node.extract()
         return bs4doc
 
@@ -74,8 +72,8 @@ class Bundler(object):
         for marker in markers:
             marker = marker.strip()
             if len(markers) > 0:
-                marker_re = re.compile("^(?:.*\s)?" + re.escape(marker) + "(?:\s.*)?$", flags=re.IGNORECASE)
-                string_css_or_js = re.sub(marker_re, "", string_css_or_js, flags=re.MULTILINE)
+                marker_re = re.compile("^(?:.*\s)?" + re.escape(marker) + "(?:\s.*)?$", flags=re.IGNORECASE|re.MULTILINE)
+                string_css_or_js = re.sub(marker_re, "", string_css_or_js)
         return string_css_or_js
 
     @staticmethod
@@ -131,13 +129,13 @@ class Bundler(object):
     ### factory methods ###
 
     @classmethod
-    def from_file(cls, file, flags):
-        if not os.path.isfile(file):
+    def from_file(cls, filePath, flags):
+        if not os.path.isfile(filePath):
             raise Exception()
 
-        path = os.path.dirname(file)
+        path = os.path.dirname(filePath)
 
-        fh = open(file, 'r')
+        fh = open(filePath, 'r')
         string = fh.read()
         fh.close()
         del fh
@@ -277,10 +275,9 @@ class Bundler(object):
                  strip_inline_js="@stripOnBundle",
                  strip_inline_css="@stripOnBundle"):
 
-        #if hasattr(string, 'read'):
-        #    string = string.read()
+        # param 'encoding' is currently not used
 
-        self.string = string.encode(encoding)
+        self.string = string
         self.path = path
         self.htroot = htroot
         self.flags = flags
@@ -336,4 +333,3 @@ class Bundler(object):
 
     def __str__(self):
         return self.bundle()
-

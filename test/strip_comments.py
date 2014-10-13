@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """ unit test for Bundler.strip_comments_from_... """
 
 import unittest
@@ -7,7 +5,7 @@ import unittest
 from bundler import Bundler
 
 
-class Test(unittest.TestCase):
+class Test_strip_comments(unittest.TestCase):
     code = "some code;"
 
     comment_endline = "// some end-line comment"
