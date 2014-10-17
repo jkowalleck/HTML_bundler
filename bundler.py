@@ -93,7 +93,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     if args.infile:
-        source = open(args.infile).read()
+        source = open(args.infile).read().decode('string_escape')
     else:
         pass    # @TODO add stdin
 

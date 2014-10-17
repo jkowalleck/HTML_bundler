@@ -84,14 +84,14 @@ class Bundler(object):
 
     @staticmethod
     def _preserve_html_entities(string):
-        string = re.sub(r"~pe\{(.+?)\}~", r"~pe{!\1}~", string)
-        string = re.sub(r"&(#[:digit:]+?|#x[:xdigit:]+?|[:alnum:]+?);", r"~pe{\1}~", string)
+        string = re.sub(r'~pe\{(.+?)\}~', r'~pe{!\1}~', string)
+        string = re.sub(r'&(#[0-9]+?|#x[0-9A-Fa-f]+?|[0-9A-Za-z]+?);', r'~pe{\1}~', string)
         return string
 
     @staticmethod
     def _revert_html_entities(string):
-        string = re.sub(r"~pe\{(#[:digit:]+?|#x[:xdigit:]+?|[:alnum:]+?)\}~", r"&\1;", string)
-        string = re.sub(r"~pe\{!(.+?)\}~", r"~pe{\1}~", string)
+        string = re.sub(r'~pe\{(#[0-9]+?|#x[0-9A-Fa-f]+?|[0-9A-Za-z]+?)\}~', r'&\1;', string)
+        string = re.sub(r'~pe\{!(.+?)\}~', r'~pe{\1}~', string)
         return string
 
     @staticmethod
@@ -100,8 +100,6 @@ class Bundler(object):
             minlen == 0 : everything in a new line
             minlen < 0 : all in one line
         """
-
-        string = str(string)
 
         re_whitespace = re.compile("[ \t\n\r]+")
 
@@ -124,7 +122,7 @@ class Bundler(object):
 
         string_parts_clean.append(string_part_clean)
 
-        return "\n".join(str(part) for part in string_parts_clean)
+        return "\n".join(part for part in string_parts_clean)
 
     ### factory methods ###
 

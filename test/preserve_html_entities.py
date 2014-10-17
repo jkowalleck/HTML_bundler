@@ -8,10 +8,13 @@ from bundler import Bundler
 
 ### class inherited for access to private funcs
 
-class Test_Bundler(Bundler):
+
+class TestBundler(Bundler):
+
     @classmethod
     def preserve_html_entities(cls, string):
         return cls._preserve_html_entities(string)
+
     @classmethod
     def revert_html_entities(cls, string):
         return cls._revert_html_entities(string)
@@ -25,11 +28,15 @@ class Test_preserve_html_entries(unittest.TestCase):
 
     @staticmethod
     def _back_and_forth(string):
-        preserved = Test_Bundler.preserve_html_entities(string)
-        reverted = Test_Bundler.revert_html_entities(preserved)
+        preserved = TestBundler.preserve_html_entities(string)
+        reverted = TestBundler.revert_html_entities(preserved)
         return reverted
 
     ### tests
+
+    def test_changed(self):
+        string = "foo &bar; baz"
+        self.assertNotEqual(string, TestBundler.preserve_html_entities(string))
 
     def test_none(self):
         string = ""
@@ -57,13 +64,13 @@ class Test_preserve_html_entries(unittest.TestCase):
 
     def test_suspect(self):
         string = "foo &amp; bar"
-        string = Test_Bundler.preserve_html_entities(string)
+        string = TestBundler.preserve_html_entities(string)
         self.assertEqual(string, self._back_and_forth(string))
 
     def test_suspect_double(self):
         string = "foo &amp; bar"
-        string = Test_Bundler.preserve_html_entities(string)
-        string = Test_Bundler.preserve_html_entities(string)
+        string = TestBundler.preserve_html_entities(string)
+        string = TestBundler.preserve_html_entities(string)
         self.assertEqual(string, self._back_and_forth(string))
 
 if __name__ == '__main__':
