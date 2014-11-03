@@ -25,9 +25,6 @@ class Bundler(object):
 
     ### constants ###
 
-    YUIC_TYPE_JS = "js"
-    YUIC_TYPE_CSS = "css"
-
     FLAG_STRIP_COMMENTS_HTML = 1
     FLAG_STRIP_COMMENTS_JS_BLOCK = 2
     FLAG_STRIP_COMMENTS_JS_ENDLINE = 4
@@ -37,10 +34,6 @@ class Bundler(object):
     FLAG_STRIP_COMMENTS_JS = FLAG_STRIP_COMMENTS_JS_BLOCK | FLAG_STRIP_COMMENTS_JS_ENDLINE
     FLAG_STRIP_COMMENTS = FLAG_STRIP_COMMENTS_HTML | FLAG_STRIP_COMMENTS_JS | FLAG_STRIP_COMMENTS_CSS
     FLAG_STRIP_COMMENTS_KEEP_FIRST = FLAG_STRIP_COMMENTS_JS_KEEP_FIRST | FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST
-
-    FLAG_OPTIMIZE_JS = 64
-    FLAG_OPTIMIZE_CSS = 128
-    FLAG_OPTIMIZE = FLAG_OPTIMIZE_CSS | FLAG_OPTIMIZE_JS
 
     FLAG_COMPRESS = 256
 
@@ -164,25 +157,6 @@ class Bundler(object):
         return string
 
     @classmethod
-    def yui_compress(cls, kind, string, flags=0):
-        # TODO use flags
-        process = subprocess.Popen(
-            ["java",
-                "-jar", cls.__yuic,
-                "--line-break", "0",
-                "--type", kind,
-                "--charset", chardet.detect(string)['encoding']
-            ],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            cwd=os.path.dirname(os.path.realpath(__file__)))
-
-        stdout, stderr = process.communicate(string.encode())
-        process.terminate()
-
-        success = stderr == b""
-        return success, (stdout if success else stderr).decode(sys.stdout.encoding)
-
-    @classmethod
     def get_base_absolute(cls, bs4doc, path_file, path_base=""):
         path = path_file
         """
@@ -300,8 +274,6 @@ class Bundler(object):
             if self.strip_inline_js:
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
             script_string = self.strip_comments_from_js(script_string, flags=self.flags)
-            if self.flags & self.FLAG_OPTIMIZE_JS != 0:
-                script_string = self.yui_compress(self.YUIC_TYPE_JS, script_string, flags=self.flags)
             script.string = script_string
             del script_string
 
@@ -311,8 +283,6 @@ class Bundler(object):
             if self.strip_inline_css:
                 style_string = self.strip_marked_line_from_css_or_js(style_string, self.strip_inline_css)
             style_string = self.strip_comments_from_css(style_string, flags=self.flags)
-            if self.flags & self.FLAG_OPTIMIZE_CSS != 0:
-                style_string = self.yui_compress(self.YUIC_TYPE_CSS, style_string, flags=self.flags)
             style.string = style_string
             del style_string
 

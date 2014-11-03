@@ -63,22 +63,6 @@ if __name__ == '__main__':
                             help='forces --strip-comments-js-keep-first AND --strip-comments-css-keep-first',
                             dest="flags", action="append_const", const=Bundler.FLAG_STRIP_COMMENTS_KEEP_FIRST)
 
-
-    # optimization
-    arg_parser.add_argument('--optimize-js',
-                            #help='forces --strip-javascript-block AND --strip-javascript-endline',
-                            dest="flags", action="append_const", const=Bundler.FLAG_OPTIMIZE_JS)
-    arg_parser.add_argument('--optimize-css',
-                            #help='forces --strip-javascript-block AND --strip-javascript-endline',
-                            dest="flags", action="append_const", const=Bundler.FLAG_OPTIMIZE_CSS)
-    arg_parser.add_argument('--optimize',
-                            help='forces --optimize-js AND --optimize-css',
-                            dest="flags", action="append_const", const=Bundler.FLAG_OPTIMIZE)
-
-    arg_parser.add_argument('--compress',
-                            help='forces --optimize-js AND --optimize-css',
-                            dest="flags", action="append_const", const=Bundler.FLAG_COMPRESS)
-
     #defaults and consts
     source = ""
     path = ""
