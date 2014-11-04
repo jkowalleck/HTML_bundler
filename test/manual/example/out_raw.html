@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8"/>
+  <title>
+   an example
+  </title>
+  <style type="text/css">
+   /* remember for development: lines that include the string "@striponbundle" will be stripped on build ;-) */
+
+.extern {
+	display: block;
+	padding: 1ex 1em;
+	color: red;
+}
+  </style>
+  <script type="application/javascript">
+   // remember for development: lines that include the string "@striponbundle" will be stripped on build ;-)
+
+var a = "alert from external JS";
+alert(a);
+  </script>
+  <style type="text/css">
+   /* remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-) */
+
+			.internal {
+				display: block;
+				padding: 1ex 1em;
+				color: blue;
+			}
+  </style>
+  <script type="application/javascript">
+   // remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-)
+
+			var a = "alert from internal JS";
+			alert(a);
+  </script>
+ </head>
+ <body>
+  <!--  remember: stripOnBundle-tags will be removed on bundling ;-)  -->
+  <div>
+   test HTML special chars:
+			ä &auml;
+			&lt; &amp; &gt;
+			è &eacute;
+			&#2325;
+  </div>
+  <div class="extern">
+   this should be formatted red via extern CSS
+   <br/>
+  </div>
+  <br/>
+  <div class="internal">
+   this should be formatted blue via inline CSS
+   <br/>
+  </div>
+  <!-- comments will be stripped on build -->
+  <pre>
+			this line is too much, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too &hellip;
+			too much &hellip; too long!
+		</pre>
+ </body>
+</html>

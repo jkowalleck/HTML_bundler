@@ -40,10 +40,14 @@ class Bundler(object):
     ### static methods ###
 
     @staticmethod
+    def _check_flag(target, flag):
+        return target & flag == flag
+
+    @staticmethod
     def _strip_comments_from_js_or_css(string, optSaveFirst=False, optWhite=False, optSingle=True, optMulti=True):
         string = jsstrip.strip(string,
                                optSaveFirst=optSaveFirst, optWhite=optWhite, optSingle=optSingle, optMulti=optMulti)
-        string = "\n".join([line for line in string.split("\n") if len(line.strip()) > 0])  # strip empty lines
+        string = "\n".join([line for line in string.splitlines() if len(line.strip()) > 0])  # strip empty lines
         return string
 
     @staticmethod
@@ -56,17 +60,21 @@ class Bundler(object):
     def strip_tag_from_bs4(bs4doc, tagnames):
         for tagname in [tagname.strip() for tagname in tagnames]:
             if len(tagname) > 0:
+                tagname = tagname.lower()
                 for node in bs4doc.find_all(tagname, recursive=True):
                     node.extract()
         return bs4doc
 
     @staticmethod
     def strip_marked_line_from_css_or_js(string_css_or_js, markers):
-        for marker in markers:
-            marker = marker.strip()
-            if len(markers) > 0:
-                marker_re = re.compile("^(?:.*\s)?" + re.escape(marker) + "(?:\s.*)?$", flags=re.IGNORECASE|re.MULTILINE)
-                string_css_or_js = re.sub(marker_re, "", string_css_or_js)
+        markers = [re.escape(marker) for marker in [marker.strip() for marker in markers] if len(marker) > 0]
+        if len(markers) > 0:
+            marker_re = re.compile("^(?:.*\s)?(?:" + "|".join(markers) + ")(?:\s.*)?$", flags=re.IGNORECASE)
+            lines = []
+            for line in string_css_or_js.splitlines():
+                if not marker_re.match(line):
+                    lines.append(line)
+            string_css_or_js = "\n".join(lines)
         return string_css_or_js
 
     @staticmethod
@@ -99,9 +107,9 @@ class Bundler(object):
         string_part_clean = ""
         string_parts_clean = []
 
-        for string_part_raw in string.split("\n"):
+        for string_part_raw in string.splitlines():
             string_part_raw = re.sub(re_whitespace, " ", string_part_raw).strip()
-            if not string_part_raw:
+            if len(string_part_raw) == 0:
                 continue
             if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
                 if string_part_clean and string_part_raw \
@@ -121,6 +129,7 @@ class Bundler(object):
 
     @classmethod
     def from_file(cls, filePath, flags):
+        """ untested """
         if not os.path.isfile(filePath):
             raise Exception()
 
@@ -137,9 +146,9 @@ class Bundler(object):
 
     @classmethod
     def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):
-        optSaveFirst = (flags & cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST != 0)
-        optMulti = (flags & cls.FLAG_STRIP_COMMENTS_JS_BLOCK != 0)
-        optSingle = (flags & cls.FLAG_STRIP_COMMENTS_JS_ENDLINE != 0)
+        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST)
+        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK)
+        optSingle = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_ENDLINE)
         if optMulti or optSingle:
             string = cls._strip_comments_from_js_or_css(string, optWhite=False,
                                                         optSaveFirst=optSaveFirst,
@@ -148,8 +157,8 @@ class Bundler(object):
 
     @classmethod
     def strip_comments_from_css(cls, string, flags=FLAG_STRIP_COMMENTS_CSS):
-        optSaveFirst = (flags & cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST != 0)
-        optMulti = (flags & cls.FLAG_STRIP_COMMENTS_CSS != 0)
+        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST)
+        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS)
         if optMulti:
             string = cls._strip_comments_from_js_or_css(string, optWhite=False, optSingle=False,
                                                         optSaveFirst=optSaveFirst,
@@ -224,8 +233,6 @@ class Bundler(object):
 
     ### config ###
 
-    __yuic = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "lib", "yuicompressor-2.4.8.jar")
-
     ### instance variables ###
 
     strip_tags = []
@@ -233,6 +240,7 @@ class Bundler(object):
     strip_inline_css = []
 
     string = ""
+    encoding = ""
     path = ""
     htroot = ""
     compress_len = 0
@@ -243,20 +251,20 @@ class Bundler(object):
     def __init__(self, string, path="", htroot="",
                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
                  compress_len=120, encoding="utf-8",
-                 strip_tags='stripOnBundle',
-                 strip_inline_js="@stripOnBundle",
-                 strip_inline_css="@stripOnBundle"):
+                 strip_tags=["stripOnBundle"],
+                 strip_inline_js=["@stripOnBundle"],
+                 strip_inline_css=["@stripOnBundle"]):
 
         # param 'encoding' is currently not used
-
+        self.encoding = encoding
         self.string = string
         self.path = path
         self.htroot = htroot
         self.flags = flags
         self.compress_len = compress_len
-        self.strip_tags = strip_tags.split(",")
-        self.strip_inline_js = strip_inline_js.split(",")
-        self.strip_inline_css = strip_inline_css.split(",")
+        self.strip_tags = strip_tags
+        self.strip_inline_js = strip_inline_js
+        self.strip_inline_css = strip_inline_css
 
     def bundle(self):
         string = self.string
@@ -271,7 +279,7 @@ class Bundler(object):
         self.fetch_external_js(bs4doc, self.path)
         for script in bs4doc.find_all('script', {'src': False}):
             script_string = script.string
-            if self.strip_inline_js:
+            if len(self.strip_inline_js) > 0:
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
             script_string = self.strip_comments_from_js(script_string, flags=self.flags)
             script.string = script_string
@@ -280,21 +288,21 @@ class Bundler(object):
         self.fetch_external_css(bs4doc, self.path)
         for style in bs4doc.find_all('style'):
             style_string = style.string
-            if self.strip_inline_css:
+            if len(self.strip_inline_css) > 0:
                 style_string = self.strip_marked_line_from_css_or_js(style_string, self.strip_inline_css)
             style_string = self.strip_comments_from_css(style_string, flags=self.flags)
             style.string = style_string
             del style_string
 
-        if self.flags & self.FLAG_STRIP_COMMENTS_HTML == self.FLAG_STRIP_COMMENTS_HTML:
+        if self._check_flag(self.flags, self.FLAG_STRIP_COMMENTS_HTML):
             self.strip_comments_from_bs4(bs4doc)
 
-        string = bs4doc.prettify()
+        string = bs4doc.prettify(encoding=self.encoding)
         del bs4doc
 
         string = self._revert_html_entities(string)
 
-        if self.flags & self.FLAG_COMPRESS == self.FLAG_COMPRESS:
+        if self._check_flag(self.flags, self.FLAG_COMPRESS):
             string = self.compress_html(string, self.compress_len)
 
         return string

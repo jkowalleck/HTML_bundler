@@ -11,11 +11,11 @@
 		<style type="text/css">
 			/* remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-) */
 
-			.inline {
+			.internal {
 				display: block;
 				padding: 1ex 1em;
 				color: blue;
-				deleteMe-border: 1px solid blue; /* @stripOnBundle */
+				internal-deleteMe-border: 1px solid blue; /* internal @stripOnBundle */
 			}
 		</style>
 
@@ -23,7 +23,7 @@
 			// remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-)
 
 			var a = "alert from internal JS";
-			    a += " - with a part that should be removed on bundling"; // @stripOnBundle
+			    a += " - with an internal part that should be removed on bundling"; // internal @striponbundle
 			alert(a);
 		</script>
 
@@ -34,24 +34,29 @@
 
 		<div> test HTML special chars:
 			ä &auml;
-			&lt; &gt; &amp;
+			&lt; &amp; &gt;
 			è &eacute;
 			&#2325;
 		</div>
 
 		<div class="extern">
 			this should be formatted red via extern CSS<br />
-			<stripOnBundle>there will be a red border</stripOnBundle>
+			<stripOnBundle>there will be a red border prior build</stripOnBundle>
 		</div>
 
 		<br />
 
-		<div class="inline">
+		<div class="internal">
 			this should be formatted blue via inline CSS<br />
-			<stripOnBundle>there will be a blue border</stripOnBundle>
+			<striponbundle>there will be a blue border prior build</striponbundle>
 		</div>
 
-		<!-- -comments will be stripped on build -->
+		<!-- comments will be stripped on build -->
+
+		<pre>
+			this line is too much, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too, much too &hellip;
+			too much &hellip; too long!
+		</pre>
 
 	</body>
 </html>

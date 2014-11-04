@@ -1,9 +1,0 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"/><title>an example</title><style type="text/css">.extern {
-display: block; padding: 1ex 1em; color: red; border: 1px solid red; }</style><script type="application/javascript">
-var a = "alert from external JS"; a += " - with a part that should be removed on build"; alert(a);</script>
-<style type="text/css">.inline { display: block; padding: 1ex 1em; color: blue; border: 1px solid blue; }</style>
-<script type="application/javascript">var a = "alert from internal JS";
-a += " - with a part that should be removed on build"; alert(a);</script></head><body><div>test HTML special chars:
-ä &auml; &lt; &gt; &amp; è é क</div><div class="extern">this should be formatted red via extern CSS<br/><striponbuild>
-there will be a red border</striponbuild></div><br/><div class="inline">this should be formatted blue via inline CSS
-<br/><striponbuild>there will be a blue border</striponbuild></div></body></html>

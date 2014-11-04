@@ -57,22 +57,26 @@ if __name__ == '__main__':
 
     # strip flags combined
     arg_parser.add_argument('--strip-comments',
-                            help='forces --strip-comments-javascript AND --strip-comments-css',
+                            help='forces --strip-comments-html AND --strip-comments-javascript AND --strip-comments-css',
                             dest="flags", action="append_const", const=Bundler.FLAG_STRIP_COMMENTS)
     arg_parser.add_argument('--strip-comments-keep-first',
                             help='forces --strip-comments-js-keep-first AND --strip-comments-css-keep-first',
                             dest="flags", action="append_const", const=Bundler.FLAG_STRIP_COMMENTS_KEEP_FIRST)
 
+    arg_parser.add_argument('--compress',
+                            help='compress the output',
+                            dest="flags", action="append_const", const=Bundler.FLAG_COMPRESS)
+
     #defaults and consts
     source = ""
     path = ""
     htroot = ""
-    flags = Bundler.FLAG_STRIP_COMMENTS | Bundler.FLAG_COMPRESS
+    flags = 0
     compress_len = 120
     encoding = "utf-8"
-    strip_tags = 'stripOnBundle'
-    strip_inline_js = "@stripOnBundle"
-    strip_inline_css = "@stripOnBundle"
+    strip_tags = ['stripOnBundle']
+    strip_inline_js = ["@stripOnBundle"]
+    strip_inline_css = ["@stripOnBundle"]
 
     args = arg_parser.parse_args()
 
@@ -91,7 +95,13 @@ if __name__ == '__main__':
     elif args.path:
         htroot = path
 
-    bundled = Bundler(source, path, htroot, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css).bundle()
+    if args.flags:
+        flags = reduce((lambda a, b: a | b), args.flags, flags)
+
+    bundled = Bundler(source,
+                      path, htroot,
+                      flags, compress_len, encoding,
+                      strip_tags, strip_inline_js, strip_inline_css).bundle()
 
     if args.outfile:
         open(args.outfile, 'w').write(bundled)
