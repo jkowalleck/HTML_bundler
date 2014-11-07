@@ -4,5 +4,5 @@
 	display: block;
 	padding: 1ex 1em;
 	color: red;
-	external-deleteMe-border: 1px solid red; /* external @striponbundle */
+	border: 1px solid red; /* external @striponbundle */
 }

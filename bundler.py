@@ -63,9 +63,31 @@ if __name__ == '__main__':
                             help='forces --strip-comments-js-keep-first AND --strip-comments-css-keep-first',
                             dest="flags", action="append_const", const=Bundler.FLAG_STRIP_COMMENTS_KEEP_FIRST)
 
+    arg_parser.add_argument('--strip-tags', metavar='<tag1[,tag2[,..]]>', type=str,
+                            help='comma separated list of HTML tags to strip from the document',
+                            dest="strip_tags")
+
+    arg_parser.add_argument('--strip-markers-js', metavar='<marker1[,marker2[,..]]>', type=str,
+                            help='comma separated list of markers. ' +
+                                 'entire marked lines will ge stripped of any JavaScript',
+                            dest="strip_inline_js")
+
+
+    arg_parser.add_argument('--strip-markers-css', metavar='<marker1[,marker2[,..]]>', type=str,
+                            help='comma separated list of markers. ' +
+                                 'entire marked lines will ge stripped of any CSS style definition',
+                            dest="strip_inline_css")
+
+    arg_parser.add_argument('--strip-markers', metavar='<marker1[,marker2[,..]]>', type=str,
+                            help='comma separated list of markers. ' +
+                                 'entire marked lines will ge stripped of any JavaScript or CSS style definition',
+                            dest="strip_inline_js_css")
+
+
     arg_parser.add_argument('--compress',
                             help='compress the output',
                             dest="flags", action="append_const", const=Bundler.FLAG_COMPRESS)
+
 
     #defaults and consts
     source = ""
@@ -74,9 +96,9 @@ if __name__ == '__main__':
     flags = 0
     compress_len = 120
     encoding = "utf-8"
-    strip_tags = ['stripOnBundle']
-    strip_inline_js = ["@stripOnBundle"]
-    strip_inline_css = ["@stripOnBundle"]
+    strip_tags = []
+    strip_inline_js = []
+    strip_inline_css = []
 
     args = arg_parser.parse_args()
 
@@ -98,6 +120,24 @@ if __name__ == '__main__':
     if args.flags:
         flags = reduce((lambda a, b: a | b), args.flags, flags)
 
+    if args.strip_tags:
+        strip_tags = args.strip_tags.split(',')
+
+    if args.strip_inline_js:
+        strip_inline_js = args.strip_inline_js.split(',')
+
+    if args.strip_inline_css:
+        strip_inline_css = args.strip_inline_css.split(',')
+
+    if args.strip_inline_js_css:
+        strip_inline_js_css = args.strip_inline_js_css.split(',')
+        strip_inline_js.extend(strip_inline_js_css)
+        strip_inline_css.extend(strip_inline_js_css)
+        del strip_inline_js_css
+
+    ## run the bundler at the end ...
+    del arg_parser
+
     bundled = Bundler(source,
                       path, htroot,
                       flags, compress_len, encoding,
@@ -107,5 +147,3 @@ if __name__ == '__main__':
         open(args.outfile, 'w').write(bundled)
     else:
         print(bundled)
-
-
