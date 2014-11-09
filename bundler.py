@@ -6,6 +6,7 @@ if __name__ == '__main__':
 
     import os
     import argparse
+    import fileinput
     import chardet
 
 
@@ -103,9 +104,18 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     if args.infile:
-        source = open(args.infile).read().decode('string_escape')
+        fh = open(args.infile)
+        if not fh:
+            raise Exception('can not read input file "' + args.infile + '"')
+        source = fh.read()
+        fh.close()
+        source = str(source)
     else:
-        pass    # @TODO add stdin
+        source_lines = []
+        for input_line in fileinput.input():
+            source_lines.append(input_line)
+        source = "\n".join(source_lines)
+        del source_lines
 
     if args.path:
         path = args.path
@@ -118,7 +128,9 @@ if __name__ == '__main__':
         htroot = path
 
     if args.flags:
-        flags = reduce((lambda a, b: a | b), args.flags, flags)
+        flags = 0
+        for flag in args.flags:
+            flags |= flag
 
     if args.strip_tags:
         strip_tags = args.strip_tags.split(',')
