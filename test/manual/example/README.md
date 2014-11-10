@@ -1,3 +1,3 @@
 #how to run this test
 
-simply run: `./test.sh`
+simply run: `./test.py`
