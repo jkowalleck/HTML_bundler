@@ -7,6 +7,7 @@ if __name__ == '__main__':
     import os
     import argparse
     import fileinput
+    import codecs
 #    import chardet
 
 
@@ -114,30 +115,36 @@ if __name__ == '__main__':
     strip_inline_js = []
     strip_inline_css = []
 
+    # @TODO add support for encoding argument
+
+    source_lines = []
     if args.infile:
-        fh = open(args.infile)
+        fh = codecs.open(args.infile, 'r', encoding=encoding)
         if not fh:
             raise Exception('can not read input file "' + args.infile + '"')
-        source = fh.read()
+        source_lines = fh.readlines()
         fh.close()
         del fh
-        source = str(source)
     else:
-        source_lines = []
         for input_line in fileinput.input():
             source_lines.append(input_line)
-        source = "\n".join(source_lines)
-        del source_lines
+    # join the lines ...
+    source = "".join(source_lines)
+    del source_lines
 
+    """ @TODO add support
     if args.path:
         path = args.path
     elif args.infile:
         path = os.path.abspath(os.path.dirname(args.infile))
+    """
 
+    """ @TODO add support
     if args.htroot:
         htroot = args.htroot
     elif args.path:
         htroot = path
+    """
 
     if args.flags:
         flags = 0
@@ -167,7 +174,7 @@ if __name__ == '__main__':
                       strip_tags, strip_inline_js, strip_inline_css).bundle()
 
     if args.outfile:
-        fh = open(args.outfile, 'w')
+        fh = open(args.outfile, 'wb')
         if not fh:
             raise Exception('can not wrote output file "' + args.outfile + '"')
         fh.write(bundled)

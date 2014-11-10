@@ -69,7 +69,7 @@ class Bundler(object):
     def strip_marked_line_from_css_or_js(string_css_or_js, markers):
         markers = [re.escape(marker) for marker in [marker.strip() for marker in markers] if len(marker) > 0]
         if len(markers) > 0:
-            marker_re = re.compile("^(?:.*\s)?(?:" + "|".join(markers) + ")(?:\s.*)?$", flags=re.IGNORECASE)
+            marker_re = re.compile("^(?:.*\s)?(?:" + "|".join(markers) + ")(?:\s.*)?$",  flags=re.IGNORECASE)
             lines = []
             for line in string_css_or_js.splitlines():
                 if not marker_re.match(line):
@@ -80,7 +80,7 @@ class Bundler(object):
     @staticmethod
     def src_is_external(uri):
         # read http://en.wikipedia.org/wiki/URI_scheme
-        match = re.match(r"^(?:[a-z][a-z0-9\+\.\-]+?:)?//", uri, flags=re.IGNORECASE)
+        match = re.match(b'^(?:[a-z][a-z0-9\+\.\-]+?:)?//', uri)
         return match
 
     @staticmethod
@@ -297,13 +297,16 @@ class Bundler(object):
         if self._check_flag(self.flags, self.FLAG_STRIP_COMMENTS_HTML):
             self.strip_comments_from_bs4(bs4doc)
 
-        string = bs4doc.prettify(encoding=self.encoding)
+        string = bs4doc.prettify()
         del bs4doc
 
         string = self._revert_html_entities(string)
 
         if self._check_flag(self.flags, self.FLAG_COMPRESS):
             string = self.compress_html(string, self.compress_len)
+
+        if hasattr(string, 'encode'):
+            string = string.encode(self.encoding)
 
         return string
 
