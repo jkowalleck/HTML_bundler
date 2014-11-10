@@ -13,7 +13,7 @@ see `./test/example/` for details
 
 ### install python requirements
 ```sh
-pip install -i requirements.txt
+pip install -r requirements.txt
 ```
 
 

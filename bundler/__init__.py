@@ -7,11 +7,11 @@ __all__ = ['Bundler']
 
 
 ### some imports ####
-import sys
+#import sys
 import os
 import re
-import chardet
-import subprocess
+#import chardet
+#import subprocess
 
 import bs4
 
