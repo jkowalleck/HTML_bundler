@@ -115,9 +115,11 @@ if __name__ == '__main__':
     strip_inline_js = []
     strip_inline_css = []
 
+    infile = sys.stdin
+    outfile = sys.stdout
+
     # @TODO add support for encoding argument
 
-    infile = sys.stdin
     if args.infile:
         infile = codecs.open(args.infile, 'rb', encoding=encoding)
         if not infile:
@@ -126,6 +128,7 @@ if __name__ == '__main__':
     source_lines = infile.readlines()
     infile.close()
     del infile
+
     # join the lines ...
     source = "".join(source_lines)
     del source_lines
@@ -165,20 +168,22 @@ if __name__ == '__main__':
         strip_inline_css.extend(strip_inline_js_css)
         del strip_inline_js_css
 
+    if args.outfile:
+        outfile = open(args.outfile, 'wb')
+        if not outfile:
+            raise Exception('can not wrote output file "' + args.outfile + '"')
+
+    del args
+
     ## run the bundler at the end ...
     bundled = Bundler(source,
                       path, htroot,
                       flags, compress_len, encoding,
                       strip_tags, strip_inline_js, strip_inline_css).bundle()
 
-    outfile = outfile = sys.stdout
+    ## and write to output
     if hasattr(outfile, 'buffer'):  # use buffer if available
         outfile = outfile.buffer
-    if args.outfile:
-        outfile = open(args.outfile, 'wb')
-        if not outfile:
-            raise Exception('can not wrote output file "' + args.outfile + '"')
-
     outfile.write(bundled)
     outfile.close()
     del outfile
