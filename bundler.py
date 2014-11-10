@@ -4,9 +4,9 @@ from bundler import Bundler
 
 if __name__ == '__main__':
 
-    import os
+    import sys
+#    import os
     import argparse
-    import fileinput
     import codecs
 #    import chardet
 
@@ -117,17 +117,15 @@ if __name__ == '__main__':
 
     # @TODO add support for encoding argument
 
-    source_lines = []
+    infile = sys.stdin
     if args.infile:
-        fh = codecs.open(args.infile, 'r', encoding=encoding)
-        if not fh:
+        infile = codecs.open(args.infile, 'rb', encoding=encoding)
+        if not infile:
             raise Exception('can not read input file "' + args.infile + '"')
-        source_lines = fh.readlines()
-        fh.close()
-        del fh
-    else:
-        for input_line in fileinput.input():
-            source_lines.append(input_line)
+
+    source_lines = infile.readlines()
+    infile.close()
+    del infile
     # join the lines ...
     source = "".join(source_lines)
     del source_lines
@@ -173,16 +171,16 @@ if __name__ == '__main__':
                       flags, compress_len, encoding,
                       strip_tags, strip_inline_js, strip_inline_css).bundle()
 
+    outfile = outfile = sys.stdout
+    if hasattr(outfile, 'buffer'):  # use buffer if available
+        outfile = outfile.buffer
     if args.outfile:
-        fh = open(args.outfile, 'wb')
-        if not fh:
+        outfile = open(args.outfile, 'wb')
+        if not outfile:
             raise Exception('can not wrote output file "' + args.outfile + '"')
-        fh.write(bundled)
-        fh.close()
-        del fh
-    else:
-        print(bundled)
 
-    del args
+    outfile.write(bundled)
+    outfile.close()
+    del outfile
 
     del bundled
