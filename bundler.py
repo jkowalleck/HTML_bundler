@@ -5,7 +5,7 @@ from bundler import Bundler
 if __name__ == '__main__':
 
     import sys
-#    import os
+    import os
     import argparse
     import codecs
 #    import chardet
@@ -19,11 +19,9 @@ if __name__ == '__main__':
                             help='a file path - if none given, listen on stdin',
                             dest="infile")
 
-    """ @TODO add support
     arg_parser.add_argument('-p', '--path-dir', metavar='<dir>', type=str,
                             # help='',
                             dest="path")
-    """
 
     """ @TODO add support
     arg_parser.add_argument('-r', '--htroot-dir', metavar='<dir>', type=str,
@@ -106,8 +104,8 @@ if __name__ == '__main__':
 
     #defaults and consts
     source = ""
-    path = ""
-    htroot = ""
+    path = os.getcwd()
+    htroot = os.getcwd()
     flags = 0
     compress_len = 120
     encoding = "utf-8"
@@ -133,12 +131,10 @@ if __name__ == '__main__':
     source = "".join(source_lines)
     del source_lines
 
-    """ @TODO add support
     if args.path:
         path = args.path
     elif args.infile:
-        path = os.path.abspath(os.path.dirname(args.infile))
-    """
+        path = os.path.dirname(args.infile)
 
     """ @TODO add support
     if args.htroot:
