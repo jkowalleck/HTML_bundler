@@ -1,15 +1,16 @@
 # HTML builder
 
-a small tool, that analyses and compresses HTMl and tries to put external files inline.
+a small tool, that analyses, bundles, cleans and compresses HTMl and tries to put external files inline.
 
-see `./test/example/` for details
 
 
 
 ## requirements:
 
-* java
 * python
+* some external python libraries 
+
+
 
 ### install python requirements
 ```sh
@@ -21,14 +22,12 @@ pip install -r requirements.txt
 
 ## use
 
+see help 
 ```sh
-<path_to_here>/bundler.py <path_to_somewere>/myfile.html
+<path_to_here>/bundler.py --help
 ```
 
 
 
-## note
-
-this will break pre-wrapped HTML - even in `<pre>` tags
 
 
