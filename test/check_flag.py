@@ -4,6 +4,7 @@ import unittest
 
 from bundler import Bundler
 
+
 class TestBundler(Bundler):
 
     @classmethod

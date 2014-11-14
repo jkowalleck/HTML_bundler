@@ -35,7 +35,7 @@ alert(a);
   <script type="application/javascript">
    // remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-)
 
-			var a = "alert from internal JS";
+			var a = "alert from internal JS"; /* just a comment that should become a block */
 			    a += " - with an internal part that should be removed on bundling"; // internal @striponbundle
 			alert(a);
   </script>

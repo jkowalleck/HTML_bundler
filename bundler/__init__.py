@@ -145,6 +145,11 @@ class Bundler(object):
     ### class methods ###
 
     @classmethod
+    def _js_comments_endline2block(cls, string):
+        # @FIXME write proper function body
+        return string
+
+    @classmethod
     def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):
         optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST)
         optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK)
