@@ -1,9 +1,9 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"/><title>an example</title><style type="text/css">.extern {
 display: block; padding: 1ex 1em; color: red; }</style><script type="application/javascript">
 var a = "alert from external JS"; alert(a);</script><style type="text/css">.internal { display: block; padding: 1ex 1em;
-color: blue; }</style><script type="application/javascript">var a = "alert from internal JS";  /* just a comment that should become a block */
- alert(a);</script></head><body><div>test HTML special chars: ä &auml; &lt; &amp; &gt; è &eacute; &#2325; | 汉语 漢語 中文 | ру́сский язы́к | 🌆 |
-</div><div class="extern">this should be formatted red via extern CSS<br/><striponbundle>
+color: blue; }</style><script type="application/javascript">var a = "alert from internal JS"; alert(a);</script></head>
+<body><div>test HTML special chars: ä &auml; &lt; &amp; &gt; è &eacute; &#2325; | 汉语 漢語 中文 | ру́сский язы́к | 🌆 |</div>
+<div class="extern">this should be formatted red via extern CSS<br/><striponbundle>
 there will be a red border prior build</striponbundle></div><br/><div class="internal">
 this should be formatted blue via inline CSS<br/><striponbundle>there will be a blue border prior build</striponbundle>
 </div>

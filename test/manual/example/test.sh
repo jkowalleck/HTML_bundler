@@ -14,7 +14,7 @@ $bundler -o "$tmp/out_fullfeatured.html" --compress --strip-markers "@stripOnBun
 errors=0
 
 echo -n "checking out_raw.html ... "
-if diff $tmp/out_raw.html $tmp/out_raw.html >/dev/null
+if diff $tmp/out_raw.html $dir/out_raw.html >/dev/null
 then
     echo "same"
 else
@@ -23,7 +23,7 @@ else
 fi
 
 echo -n "checking out_fullfeatured.html ... "
-if diff $tmp/out_fullfeatured.html $tmp/out_fullfeatured.html >/dev/null
+if diff $tmp/out_fullfeatured.html $dir/out_fullfeatured.html >/dev/null
 then
     echo "same"
 else
