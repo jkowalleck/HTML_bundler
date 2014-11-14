@@ -82,7 +82,7 @@ class Bundler(object):
     @staticmethod
     def src_is_external(uri):
         # read http://en.wikipedia.org/wiki/URI_scheme
-        match = re.match(b'^(?:[a-z][a-z0-9\+\.\-]+?:)?//', uri)
+        match = re.match(r'^(?:[a-z][a-z0-9\+\.\-]+?:)?//', uri)
         return match
 
     @staticmethod
