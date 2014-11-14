@@ -147,6 +147,11 @@ class Bundler(object):
     ### class methods ###
 
     @classmethod
+    def _add_trailing_semicolon_to_js(cls, string):
+        # @TODO write a proper function body
+        return string
+
+    @classmethod
     def _js_comments_endline2block(cls, string):
         return "".join([('/* ' + tok.strip(' \t\n\r/') + ' */' if name == 'linecomment' else tok)
                         for name, tok in JsLexer().lex(string)])
@@ -290,6 +295,7 @@ class Bundler(object):
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
             script_string = self.strip_comments_from_js(script_string, flags=self.flags)
             if self._check_flag(self.flags, self.FLAG_COMPRESS):
+                script_string = self._add_trailing_semicolon_to_js(script_string)
                 script_string = self._js_comments_endline2block(script_string)
             script.string = script_string
             del script_string
