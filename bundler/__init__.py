@@ -15,6 +15,8 @@ import re
 
 import bs4
 
+from jslex import JsLexer
+
 from lib import jsstrip
 
 
@@ -146,8 +148,8 @@ class Bundler(object):
 
     @classmethod
     def _js_comments_endline2block(cls, string):
-        # @FIXME write proper function body
-        return string
+        return "".join([('/* ' + tok.strip(' \t\n\r/') + ' */' if name == 'linecomment' else tok)
+                        for name, tok in JsLexer().lex(string)])
 
     @classmethod
     def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):

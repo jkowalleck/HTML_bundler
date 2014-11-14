@@ -24,7 +24,7 @@ class Test_js_comments_endline2block(unittest.TestCase):
         self.assertEqual(string, TestBundler.js_comments_endline2block(string))
 
     def test_no_comment(self):
-        string = "var i = 1;"
+        string = "var i =  1; "
         self.assertEqual(string, TestBundler.js_comments_endline2block(string))
 
     def test_block_comment_single_line(self):
