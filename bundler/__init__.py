@@ -289,11 +289,10 @@ class Bundler(object):
             if len(self.strip_inline_js) > 0:
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
             script_string = self.strip_comments_from_js(script_string, flags=self.flags)
+            if self._check_flag(self.flags, self.FLAG_COMPRESS):
+                script_string = self._js_comments_endline2block(script_string)
             script.string = script_string
             del script_string
-
-        for script in bs4doc.find_all('script'):
-            script.string = self._js_comments_endline2block(script.string)
 
         self.fetch_external_css(bs4doc, self.path)
         for style in bs4doc.find_all('style'):
