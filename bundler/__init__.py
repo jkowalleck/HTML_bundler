@@ -252,7 +252,7 @@ class Bundler(object):
                  strip_tags=["stripOnBundle"],
                  strip_inline_js=["@stripOnBundle"],
                  strip_inline_css=["@stripOnBundle"]):
-        self.encoding = encoding    # param 'encoding' is currently not used
+        self.encoding = encoding
         self.string = string
         self.path = (os.path.abspath(path) if path else os.getcwd())
         self.htroot = (os.path.abspath(htroot) if htroot else path)
