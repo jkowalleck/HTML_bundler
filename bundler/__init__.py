@@ -292,6 +292,9 @@ class Bundler(object):
             script.string = script_string
             del script_string
 
+        for script in bs4doc.find_all('script'):
+            script.string = self._js_comments_endline2block(script.string)
+
         self.fetch_external_css(bs4doc, self.path)
         for style in bs4doc.find_all('style'):
             style_string = style.string
