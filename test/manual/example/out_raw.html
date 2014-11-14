@@ -5,8 +5,22 @@
   <title>
    an example
   </title>
-  <link href="look.css" rel="stylesheet" type="text/css"/>
-  <script src="feel.js" type="application/javascript">
+  <style type="text/css">
+   /* remember for development: lines that include the string "@striponbundle" will be stripped on build ;-) */
+
+.extern {
+	display: block;
+	padding: 1ex 1em;
+	color: red;
+	border: 1px solid red; /* external @striponbundle */
+}
+  </style>
+  <script type="application/javascript">
+   // remember for development: lines that include the string "@striponbundle" will be stripped on build ;-)
+
+var a = "alert from external JS";
+    a += " - with a external part that should be removed on build"; // external @striponbundle
+alert(a);
   </script>
   <style type="text/css">
    /* remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-) */

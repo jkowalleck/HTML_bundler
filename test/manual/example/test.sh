@@ -3,7 +3,7 @@
 dir=$(dirname $0)
 tmp=$(mktemp.exe -d)
 
-bundler="$dir/../../../bundler.py --path-dir $dir -i $dir/in.html"
+bundler="$dir/../../../bundler.py -i $dir/in.html"
 
 #echo "dir = $dir"
 #echo "tmp = $tmp"

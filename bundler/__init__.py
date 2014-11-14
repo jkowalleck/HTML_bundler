@@ -3,7 +3,7 @@ __author__ = "Jan Kowalleck (jan.kowalleck@googlemail.com)"
 __copyright__ = "Copyright (c) 2014 Jan Kowalleck"
 __license__ = "MIT"
 
-__all__ = ['Bundler']
+__all__ = ['Bundler', 'BundlerPathIsNoDirException']
 
 
 ### some imports ####
@@ -192,12 +192,10 @@ class Bundler(object):
                 src = script['src']
                 if cls.src_is_external(src):
                     continue
-
                 src_path = os.path.join(path, src)
                 if not os.path.isfile(src_path):
                     # script.extract()
                     continue
-
                 del script['src']
                 fh = open(src_path, "r")
                 script.string = fh.read()
@@ -254,17 +252,19 @@ class Bundler(object):
                  strip_tags=["stripOnBundle"],
                  strip_inline_js=["@stripOnBundle"],
                  strip_inline_css=["@stripOnBundle"]):
-
-        # param 'encoding' is currently not used
-        self.encoding = encoding
+        self.encoding = encoding    # param 'encoding' is currently not used
         self.string = string
-        self.path = path
-        self.htroot = htroot
-        self.flags = flags
-        self.compress_len = compress_len
+        self.path = (os.path.abspath(path) if path else os.getcwd())
+        self.htroot = (os.path.abspath(htroot) if htroot else path)
+        self.flags = max(flags, 0)
+        self.compress_len = max(compress_len, 0)
         self.strip_tags = strip_tags
         self.strip_inline_js = strip_inline_js
         self.strip_inline_css = strip_inline_css
+        if not os.path.isdir(self.path):
+            raise BundlerPathIsNoDirException(self.path)
+        if not os.path.isdir(self.htroot):
+            raise BundlerPathIsNoDirException(self.htroot)
 
     def bundle(self):
         string = self.string
@@ -312,3 +312,7 @@ class Bundler(object):
 
     def __str__(self):
         return self.bundle()
+
+
+class BundlerPathIsNoDirException(Exception):
+    pass
