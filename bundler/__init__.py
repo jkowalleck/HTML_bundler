@@ -15,9 +15,9 @@ import re
 
 import bs4
 
-from jslex import JsLexer
-
-from lib import jsstrip
+from pygments.token import Token as LexerToken
+from pygments.lexers.javascript import JavascriptLexer
+from pygments.lexers.css import CssLexer
 
 
 ### the builder -here we go ###
@@ -44,13 +44,6 @@ class Bundler(object):
     @staticmethod
     def _check_flag(target, flag):
         return target & flag == flag
-
-    @staticmethod
-    def _strip_comments_from_js_or_css(string, optSaveFirst=False, optWhite=False, optSingle=True, optMulti=True):
-        string = jsstrip.strip(string,
-                               optSaveFirst=optSaveFirst, optWhite=optWhite, optSingle=optSingle, optMulti=optMulti)
-        string = "\n".join([line for line in string.splitlines() if len(line.strip()) > 0])  # strip empty lines
-        return string
 
     @staticmethod
     def strip_comments_from_bs4(bs4doc):
@@ -153,28 +146,57 @@ class Bundler(object):
 
     @classmethod
     def _js_comments_endline2block(cls, string):
-        return "".join([('/* ' + tok.strip(' \t\n\r/') + ' */' if name == 'linecomment' else tok)
-                        for name, tok in JsLexer().lex(string)])
+        lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+        string += "\n"
+        string = "".join([('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n') if token == LexerToken.Comment.Single else value)
+                          for (token, value) in lexer.get_tokens(string)])
+        return string[:-1]
+
+    @classmethod
+    def _strip_comments(cls, string, lexer, comments, preserve_first=False):
+        preserved_first = ''
+        if preserve_first:
+            for (token, value) in lexer.get_tokens(string):
+                if token == LexerToken.Whitespace:
+                    preserved_first += value
+                if token == LexerToken.Text and not value.strip():
+                    preserved_first += value
+                elif token in comments:
+                    preserved_first += value if value[-1] != '\n' else value[:-1]
+                    break
+                else:
+                    break
+        parts = [('' if value[-1] != '\n' else '\n') if token in comments else value
+                 for (token, value) in lexer.get_tokens(string)]
+        return preserved_first + "".join(parts)
 
     @classmethod
     def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):
-        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST)
-        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK)
-        optSingle = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_ENDLINE)
-        if optMulti or optSingle:
-            string = cls._strip_comments_from_js_or_css(string, optWhite=False,
-                                                        optSaveFirst=optSaveFirst,
-                                                        optSingle=optSingle, optMulti=optMulti)
+        strip_comments = []
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_ENDLINE):
+            strip_comments.append(LexerToken.Comment.Single)
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK):
+            strip_comments.append(LexerToken.Comment.Multiline)
+        if strip_comments:
+            lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+            string += "\n"
+            string = cls._strip_comments(string, lexer, strip_comments,
+                                         cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST))
+            string = string[:-1]
         return string
 
     @classmethod
     def strip_comments_from_css(cls, string, flags=FLAG_STRIP_COMMENTS_CSS):
-        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST)
-        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS)
-        if optMulti:
-            string = cls._strip_comments_from_js_or_css(string, optWhite=False, optSingle=False,
-                                                        optSaveFirst=optSaveFirst,
-                                                        optMulti=optMulti)
+        strip_comments = []
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS):
+            strip_comments.append(LexerToken.Comment)
+        if strip_comments:
+            lexer = CssLexer(stripnl=False, stripall=False, ensurenl=False)
+            string += "\n"
+            string = cls._strip_comments(string, lexer, strip_comments,
+                                         cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST))
+            string = string[:-1]
+
         return string
 
     @classmethod

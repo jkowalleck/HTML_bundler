@@ -115,3 +115,16 @@ class Test_add_trailing_semicolon_to_js(unittest.TestCase):
             string = "with { obj }  \n" \
                      "{}"
             self.assertEqual(string, TestBundler.add_trailing_semicolon_to_js(string))
+
+    def rest_lambda(self):
+        string = "(function () { return true})('foo',bar)\n" \
+                 "function(){return true;}('foo')\n" \
+                 "!function(){}()\n" \
+                 "(function(){}())\n" \
+                 "var f = function () {}"
+        string_conv= "(function () { return true})('foo',bar);\n" \
+                     "function(){return true;}('foo');\n" \
+                     "!function(){foo}();\n" \
+                     "(function(){}());\n" \
+                     "var f = function () {};"
+        self.assertEqual(string_conv, TestBundler.add_trailing_semicolon_to_js(string))
