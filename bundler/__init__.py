@@ -107,8 +107,7 @@ class Bundler(object):
             if len(string_part_raw) == 0:
                 continue
             if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
-                if string_part_clean and string_part_raw \
-                        and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
+                if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
                     string_part_raw = " " + string_part_raw
                 string_part_clean += string_part_raw
             else:
@@ -119,23 +118,6 @@ class Bundler(object):
         string_parts_clean.append(string_part_clean)
 
         return "\n".join(part for part in string_parts_clean)
-
-    ### factory methods ###
-
-    @classmethod
-    def from_file(cls, filePath, flags):
-        """ untested """
-        if not os.path.isfile(filePath):
-            raise Exception()
-
-        path = os.path.dirname(filePath)
-
-        fh = open(filePath, 'r')
-        string = fh.read()
-        fh.close()
-        del fh
-
-        return cls(string, path, flags)
 
     ### class methods ###
 
@@ -148,7 +130,7 @@ class Bundler(object):
     def _js_comments_endline2block(cls, string):
         lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
         string += "\n"
-        string = "".join([('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n') if token == LexerToken.Comment.Single else value)
+        string = "".join([(('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n')) if token == LexerToken.Comment.Single else value)
                           for (token, value) in lexer.get_tokens(string)])
         return string[:-1]
 
@@ -162,7 +144,7 @@ class Bundler(object):
                 if token == LexerToken.Text and not value.strip():
                     preserved_first += value
                 elif token in comments:
-                    preserved_first += value if value[-1] != '\n' else value[:-1]
+                    preserved_first += (value if value[-1] != '\n' else value[:-1])
                     break
                 else:
                     break
@@ -274,13 +256,36 @@ class Bundler(object):
     string = ""
     encoding = ""
     path = ""
-    htroot = ""
+    root = ""
     compress_len = 0
     flags = 0
 
+        ### factory methods ###
+
+    @classmethod
+    def from_file(cls, file_path, htroot="",
+                 flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
+                 compress_len=120, encoding="utf-8",
+                 strip_tags=["stripOnBundle"],
+                 strip_inline_js=["@stripOnBundle"],
+                 strip_inline_css=["@stripOnBundle"]):
+        """ untested """
+
+        if not os.path.isfile(file_path):
+            raise Exception('no file "' + file_path + '"')
+
+        fh = open(file_path, 'r')
+        string = fh.read()
+        fh.close()
+        del fh
+
+        path = os.path.dirname(file_path)
+
+        return cls(string, path, htroot, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css)
+
     ### instance methods ###
 
-    def __init__(self, string, path="", htroot="",
+    def __init__(self, string, path="", root="",
                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
                  compress_len=120, encoding="utf-8",
                  strip_tags=["stripOnBundle"],
@@ -289,7 +294,7 @@ class Bundler(object):
         self.encoding = encoding
         self.string = string
         self.path = (os.path.abspath(path) if path else os.getcwd())
-        self.htroot = (os.path.abspath(htroot) if htroot else path)
+        self.root = (os.path.abspath(root) if root else path)
         self.flags = max(flags, 0)
         self.compress_len = max(compress_len, 0)
         self.strip_tags = strip_tags
@@ -297,8 +302,8 @@ class Bundler(object):
         self.strip_inline_css = strip_inline_css
         if not os.path.isdir(self.path):
             raise BundlerPathIsNoDirException(self.path)
-        if not os.path.isdir(self.htroot):
-            raise BundlerPathIsNoDirException(self.htroot)
+        if not os.path.isdir(self.root):
+            raise BundlerPathIsNoDirException(self.root)
 
     def bundle(self):
         string = self.string
@@ -351,5 +356,4 @@ class Bundler(object):
         return self.bundle()
 
 
-class BundlerPathIsNoDirException(Exception):
-    pass
+class BundlerPathIsNoDirException(Exception): pass
