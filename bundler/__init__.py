@@ -52,11 +52,11 @@ class Bundler(object):
         return bs4doc
 
     @staticmethod
-    def strip_tag_from_bs4(bs4doc, tagnames):
-        for tagname in [tagname.strip() for tagname in tagnames]:
-            if len(tagname) > 0:
-                tagname = tagname.lower()
-                for node in bs4doc.find_all(tagname, recursive=True):
+    def strip_tag_from_bs4(bs4doc, tag_names):
+        for tag_name in [tag_name.strip() for tag_name in tag_names]:
+            if len(tag_name) > 0:
+                tag_name = tag_name.lower()
+                for node in bs4doc.find_all(tag_name, recursive=True):
                     node.extract()
         return bs4doc
 
@@ -108,7 +108,7 @@ class Bundler(object):
                 continue
             if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
                 if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
-                    string_part_raw = " " + string_part_raw
+                    string_part_raw = " " + str(string_part_raw)
                 string_part_clean += string_part_raw
             else:
                 if string_part_clean:
