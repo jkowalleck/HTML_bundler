@@ -34,8 +34,8 @@ alert(a);
   </style>
   <script type="application/javascript">
    // remember for development: lines that include the string "@stripOnBundle" will be stripped on bundling ;-)
-
-			var a = "alert from internal JS"; // just a comment that should become a block
+			// next line has no semicolon, which should be ok ... but it will be added if compressed
+			var a = "alert from internal JS" // just a comment that should become a block
 			    a += " - with an internal part that should be removed on bundling"; // internal @striponbundle
 			alert(a);
   </script>

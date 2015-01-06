@@ -1,4 +1,9 @@
+
+
+# for HTML parsing
 beautifulsoup4
 html5lib
-#chardet
-jslex
+
+# for CSS and JS lexer
+pygments
+

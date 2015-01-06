@@ -15,9 +15,9 @@ import re
 
 import bs4
 
-from jslex import JsLexer
-
-from lib import jsstrip
+from pygments.token import Token as LexerToken
+from pygments.lexers.javascript import JavascriptLexer
+from pygments.lexers.css import CssLexer
 
 
 ### the builder -here we go ###
@@ -46,24 +46,17 @@ class Bundler(object):
         return target & flag == flag
 
     @staticmethod
-    def _strip_comments_from_js_or_css(string, optSaveFirst=False, optWhite=False, optSingle=True, optMulti=True):
-        string = jsstrip.strip(string,
-                               optSaveFirst=optSaveFirst, optWhite=optWhite, optSingle=optSingle, optMulti=optMulti)
-        string = "\n".join([line for line in string.splitlines() if len(line.strip()) > 0])  # strip empty lines
-        return string
-
-    @staticmethod
     def strip_comments_from_bs4(bs4doc):
         for comment in bs4doc.find_all(text=lambda text: isinstance(text, bs4.Comment)):
             comment.extract()
         return bs4doc
 
     @staticmethod
-    def strip_tag_from_bs4(bs4doc, tagnames):
-        for tagname in [tagname.strip() for tagname in tagnames]:
-            if len(tagname) > 0:
-                tagname = tagname.lower()
-                for node in bs4doc.find_all(tagname, recursive=True):
+    def strip_tag_from_bs4(bs4doc, tag_names):
+        for tag_name in [tag_name.strip() for tag_name in tag_names]:
+            if len(tag_name) > 0:
+                tag_name = tag_name.lower()
+                for node in bs4doc.find_all(tag_name, recursive=True):
                     node.extract()
         return bs4doc
 
@@ -114,9 +107,8 @@ class Bundler(object):
             if len(string_part_raw) == 0:
                 continue
             if length < 0 or len(string_part_clean) + len(string_part_raw) <= length:
-                if string_part_clean and string_part_raw \
-                        and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
-                    string_part_raw = " " + string_part_raw
+                if string_part_clean and string_part_raw and string_part_clean[-1] != ">" and string_part_raw[0] != "<":
+                    string_part_raw = " " + str(string_part_raw)
                 string_part_clean += string_part_raw
             else:
                 if string_part_clean:
@@ -127,49 +119,90 @@ class Bundler(object):
 
         return "\n".join(part for part in string_parts_clean)
 
-    ### factory methods ###
-
-    @classmethod
-    def from_file(cls, filePath, flags):
-        """ untested """
-        if not os.path.isfile(filePath):
-            raise Exception()
-
-        path = os.path.dirname(filePath)
-
-        fh = open(filePath, 'r')
-        string = fh.read()
-        fh.close()
-        del fh
-
-        return cls(string, path, flags)
-
     ### class methods ###
 
     @classmethod
+    def _add_trailing_semicolon_to_js(cls, string):
+        return string   # i give up on this issue. adding trailing semicolon is not a trivial job
+
+        lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+        clean_string = []
+        tokens_values = []
+        for token_value in lexer.get_tokens(string+"\n"):
+            tokens_values.append(token_value)
+        need_semicolon = True
+        for (token, value) in reversed(tokens_values):
+            if value == "":
+                continue
+            if LexerToken.Text and value[0] == "\n":
+                need_semicolon = True
+            elif token == LexerToken.Punctuation:
+                need_semicolon = False
+            elif token == LexerToken.JavaComment.Single:
+                pass
+            elif token == LexerToken.Comment.Multiline:
+                pass
+            else:
+                if need_semicolon:
+                    need_semicolon = False
+                    value += ";"
+            clean_string.append(value)
+        return "".join(reversed(clean_string))[:-1]
+
+    @classmethod
     def _js_comments_endline2block(cls, string):
-        return "".join([('/* ' + tok.strip(' \t\n\r/') + ' */' if name == 'linecomment' else tok)
-                        for name, tok in JsLexer().lex(string)])
+        lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+        string += "\n"
+        string = "".join([(('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n'))
+                           if token == LexerToken.Comment.Single else value)
+                          for (token, value) in lexer.get_tokens(string)])
+        return string[:-1]
+
+    @classmethod
+    def _strip_comments(cls, string, lexer, comments, preserve_first=False):
+        preserved_first = ''
+        if preserve_first:
+            for (token, value) in lexer.get_tokens(string):
+                if token == LexerToken.Whitespace:
+                    preserved_first += value
+                if token == LexerToken.Text and not value.strip():
+                    preserved_first += value
+                elif token in comments:
+                    preserved_first += (value if value[-1] != '\n' else value[:-1])
+                    break
+                else:
+                    break
+        parts = [('' if value[-1] != '\n' else '\n') if token in comments else value
+                 for (token, value) in lexer.get_tokens(string)]
+        return preserved_first + "".join(parts)
 
     @classmethod
     def strip_comments_from_js(cls, string, flags=FLAG_STRIP_COMMENTS_JS):
-        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST)
-        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK)
-        optSingle = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_ENDLINE)
-        if optMulti or optSingle:
-            string = cls._strip_comments_from_js_or_css(string, optWhite=False,
-                                                        optSaveFirst=optSaveFirst,
-                                                        optSingle=optSingle, optMulti=optMulti)
+        strip_comments = []
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_ENDLINE):
+            strip_comments.append(LexerToken.Comment.Single)
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_BLOCK):
+            strip_comments.append(LexerToken.Comment.Multiline)
+        if strip_comments:
+            lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+            string += "\n"
+            string = cls._strip_comments(string, lexer, strip_comments,
+                                         cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_JS_KEEP_FIRST))
+            string = string[:-1]
         return string
 
     @classmethod
     def strip_comments_from_css(cls, string, flags=FLAG_STRIP_COMMENTS_CSS):
-        optSaveFirst = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST)
-        optMulti = cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS)
-        if optMulti:
-            string = cls._strip_comments_from_js_or_css(string, optWhite=False, optSingle=False,
-                                                        optSaveFirst=optSaveFirst,
-                                                        optMulti=optMulti)
+        strip_comments = []
+        if cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS):
+            strip_comments.append(LexerToken.Comment)
+        if strip_comments:
+            lexer = CssLexer(stripnl=False, stripall=False, ensurenl=False)
+            string += "\n"
+            string = cls._strip_comments(string, lexer, strip_comments,
+                                         cls._check_flag(flags, cls.FLAG_STRIP_COMMENTS_CSS_KEEP_FIRST))
+            string = string[:-1]
+
         return string
 
     @classmethod
@@ -247,13 +280,36 @@ class Bundler(object):
     string = ""
     encoding = ""
     path = ""
-    htroot = ""
+    root = ""
     compress_len = 0
     flags = 0
 
+        ### factory methods ###
+
+    @classmethod
+    def from_file(cls, file_path, root="",
+                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
+                  compress_len=120, encoding="utf-8",
+                  strip_tags=["stripOnBundle"],
+                  strip_inline_js=["@stripOnBundle"],
+                  strip_inline_css=["@stripOnBundle"]):
+        """ untested """
+
+        if not os.path.isfile(file_path):
+            raise Exception('no file "' + file_path + '"')
+
+        fh = open(file_path, 'r')
+        string = fh.read()
+        fh.close()
+        del fh
+
+        path = os.path.dirname(file_path)
+
+        return cls(string, path, root, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css)
+
     ### instance methods ###
 
-    def __init__(self, string, path="", htroot="",
+    def __init__(self, string, path="", root="",
                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
                  compress_len=120, encoding="utf-8",
                  strip_tags=["stripOnBundle"],
@@ -262,7 +318,7 @@ class Bundler(object):
         self.encoding = encoding
         self.string = string
         self.path = (os.path.abspath(path) if path else os.getcwd())
-        self.htroot = (os.path.abspath(htroot) if htroot else path)
+        self.root = (os.path.abspath(root) if root else path)
         self.flags = max(flags, 0)
         self.compress_len = max(compress_len, 0)
         self.strip_tags = strip_tags
@@ -270,8 +326,8 @@ class Bundler(object):
         self.strip_inline_css = strip_inline_css
         if not os.path.isdir(self.path):
             raise BundlerPathIsNoDirException(self.path)
-        if not os.path.isdir(self.htroot):
-            raise BundlerPathIsNoDirException(self.htroot)
+        if not os.path.isdir(self.root):
+            raise BundlerPathIsNoDirException(self.root)
 
     def bundle(self):
         string = self.string
@@ -290,6 +346,7 @@ class Bundler(object):
                 script_string = self.strip_marked_line_from_css_or_js(script_string, self.strip_inline_js)
             script_string = self.strip_comments_from_js(script_string, flags=self.flags)
             if self._check_flag(self.flags, self.FLAG_COMPRESS):
+                script_string = self._add_trailing_semicolon_to_js(script_string)
                 script_string = self._js_comments_endline2block(script_string)
             script.string = script_string
             del script_string
@@ -323,5 +380,4 @@ class Bundler(object):
         return self.bundle()
 
 
-class BundlerPathIsNoDirException(Exception):
-    pass
+class BundlerPathIsNoDirException(Exception): pass
