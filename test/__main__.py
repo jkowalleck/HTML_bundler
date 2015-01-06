@@ -15,7 +15,7 @@ from .strip_comments_from_css import *
 from .strip_marked_line_from_css_or_js import *
 from .check_flag import *
 from .js_comments_endline2block import *
-from .add_trailing_semicolon_to_js import *
+#from .add_trailing_semicolon_to_js import *    # not implemented ...
 
 
 # run the tests

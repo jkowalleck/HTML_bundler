@@ -123,14 +123,38 @@ class Bundler(object):
 
     @classmethod
     def _add_trailing_semicolon_to_js(cls, string):
-        # @TODO write a proper function body
-        return string
+        return string   # i give up on this issue. adding trailing semicolon is not a trivial job
+
+        lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
+        clean_string = []
+        tokens_values = []
+        for token_value in lexer.get_tokens(string+"\n"):
+            tokens_values.append(token_value)
+        need_semicolon = True
+        for (token, value) in reversed(tokens_values):
+            if value == "":
+                continue
+            if LexerToken.Text and value[0] == "\n":
+                need_semicolon = True
+            elif token == LexerToken.Punctuation:
+                need_semicolon = False
+            elif token == LexerToken.JavaComment.Single:
+                pass
+            elif token == LexerToken.Comment.Multiline:
+                pass
+            else:
+                if need_semicolon:
+                    need_semicolon = False
+                    value += ";"
+            clean_string.append(value)
+        return "".join(reversed(clean_string))[:-1]
 
     @classmethod
     def _js_comments_endline2block(cls, string):
         lexer = JavascriptLexer(stripnl=False, stripall=False, ensurenl=False)
         string += "\n"
-        string = "".join([(('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n')) if token == LexerToken.Comment.Single else value)
+        string = "".join([(('/* ' + value.strip(' \t\n\r/') + ' */' + ('' if value[-1] != '\n' else '\n'))
+                           if token == LexerToken.Comment.Single else value)
                           for (token, value) in lexer.get_tokens(string)])
         return string[:-1]
 
@@ -263,12 +287,12 @@ class Bundler(object):
         ### factory methods ###
 
     @classmethod
-    def from_file(cls, file_path, htroot="",
-                 flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
-                 compress_len=120, encoding="utf-8",
-                 strip_tags=["stripOnBundle"],
-                 strip_inline_js=["@stripOnBundle"],
-                 strip_inline_css=["@stripOnBundle"]):
+    def from_file(cls, file_path, root="",
+                  flags=FLAG_STRIP_COMMENTS | FLAG_COMPRESS,
+                  compress_len=120, encoding="utf-8",
+                  strip_tags=["stripOnBundle"],
+                  strip_inline_js=["@stripOnBundle"],
+                  strip_inline_css=["@stripOnBundle"]):
         """ untested """
 
         if not os.path.isfile(file_path):
@@ -281,7 +305,7 @@ class Bundler(object):
 
         path = os.path.dirname(file_path)
 
-        return cls(string, path, htroot, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css)
+        return cls(string, path, root, flags, compress_len, encoding, strip_tags, strip_inline_js, strip_inline_css)
 
     ### instance methods ###
 

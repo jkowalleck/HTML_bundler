@@ -19,6 +19,10 @@ class TestBundler(Bundler):
 
 class Test_add_trailing_semicolon_to_js(unittest.TestCase):
 
+    def test_ok(self):
+        string = "var x = 1,\ny = [];\nvar z = {};\nvar func = function(a){},\nf = func(x);"
+        self.assertEqual(string, TestBundler.add_trailing_semicolon_to_js(string))
+
     def test_empty(self):
         string = ""
         self.assertEqual(string, TestBundler.add_trailing_semicolon_to_js(string))
@@ -44,12 +48,12 @@ class Test_add_trailing_semicolon_to_js(unittest.TestCase):
                       "\n};"
         self.assertEqual(string_conv, TestBundler.add_trailing_semicolon_to_js(string))
 
-    def test_width_clockcomment(self):
+    def test_width_blockcomment(self):
         string = "var a = 1 /* a comment */"
         string_conv = "var a = 1; /* a comment */"
         self.assertEqual(string_conv, TestBundler.add_trailing_semicolon_to_js(string))
 
-    def test_width_clockcomment_multiple (self):
+    def test_width_blockcomment_multiple (self):
         string = "var a = 1 /* a */ /* multiple */ /* comments */"
         string_conv = "var a = 1; /* a */ /* multiple */ /* comments */"
         self.assertEqual(string_conv, TestBundler.add_trailing_semicolon_to_js(string))

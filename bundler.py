@@ -24,9 +24,9 @@ if __name__ == '__main__':
                             dest="path")
 
     """ @TODO add support
-    arg_parser.add_argument('-r', '--htroot-dir', metavar='<dir>', type=str,
+    arg_parser.add_argument('-r', '--root-dir', metavar='<dir>', type=str,
                             # help='',
-                            dest="htroot")
+                            dest="root")
     """
 
     # output
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     #defaults and consts
     source = ""
     path = os.getcwd()
-    htroot = os.getcwd()
+    root = os.getcwd()
     flags = 0
     compress_len = 120
     encoding = "utf-8"
@@ -137,10 +137,10 @@ if __name__ == '__main__':
         path = os.path.dirname(args.infile)
 
     """ @TODO add support
-    if args.htroot:
-        htroot = args.htroot
+    if args.root:
+        root = args.root
     elif args.path:
-        htroot = path
+        root = path
     """
 
     if args.flags:
@@ -167,13 +167,13 @@ if __name__ == '__main__':
     if args.outfile:
         outfile = open(args.outfile, 'wb')
         if not outfile:
-            raise Exception('can not wrote output file "' + args.outfile + '"')
+            raise Exception('can not write output file "' + args.outfile + '"')
 
     del args
 
     ## run the bundler at the end ...
     bundled = Bundler(source,
-                      path, htroot,
+                      path, root,
                       flags, compress_len, encoding,
                       strip_tags, strip_inline_js, strip_inline_css).bundle()
 
